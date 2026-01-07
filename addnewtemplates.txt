@@ -1,0 +1,17 @@
+# Adding New Templates
+# Simply edit static/data/promptTemplates.json
+# and add new entries:
+
+
+{
+  "existing_templates": "...",
+  
+  "my_new_template": {
+    "name": "🆕 My Template",
+    "description": "What this template does",
+    "fields": ["field1", "field2"],
+    "role": "System role for the AI",
+    "template": "Your prompt with {field1} and {field2}",
+    "output_format": "plain_text"
+  }
+}

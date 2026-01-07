@@ -90,6 +90,16 @@ def preview_agent():
     return jsonify({"success": True, "files": files})
 
 
+@app.route("/api/templates", methods=["GET"])
+def get_templates():
+    templates_file = os.path.join("static", "data", "promptTemplates.json")
+    try:
+        with open(templates_file, "r", encoding="utf-8") as f:
+            templates = json.load(f)
+        return jsonify(templates)
+    except FileNotFoundError:
+        return jsonify({})
+
 @app.route("/api/create", methods=["POST"])
 def create_agent():
     data = request.json
@@ -605,3 +615,4 @@ if __name__ == "__main__":
     print("Open http://localhost:5000")
     print("=" * 50)
     app.run(debug=True, port=5000)
+

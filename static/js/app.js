@@ -1,5 +1,6 @@
 let currentStep = 1;
 const totalSteps = 6;
+let promptTemplates = {};
 let formData = {
     agent_name: '',
     agent_description: '',
@@ -13,46 +14,9 @@ let formData = {
     output_format: 'plain_text'
 };
 
-const promptTemplates = {
-    summarizer: {
-        fields: ['content', 'length'],
-        template: `Summarize the following content in {length} sentences:
-
-{content}
-
-Provide a clear, concise summary capturing the main points.`
-    },
-    flashcard: {
-        fields: ['content', 'num_cards'],
-        template: `Create {num_cards} flashcard Q&A pairs from this content:
-
-{content}
-
-Return as JSON array: [{"question": "...", "answer": "..."}]`
-    },
-    email: {
-        fields: ['recipient', 'subject', 'tone', 'key_points'],
-        template: `Write a {tone} email to {recipient} about: {subject}
-
-Key points to include:
-{key_points}
-
-Output only the email text with appropriate greeting and signature.`
-    },
-    qa: {
-        fields: ['context', 'question'],
-        template: `Based on the following context, answer the question.
-
-Context:
-{context}
-
-Question: {question}
-
-Provide a clear and accurate answer based only on the given context.`
-    }
-};
-
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    loadTemplates();
     loadTools();
     loadFormats();
     loadModels();
@@ -60,11 +24,46 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProgress();
 });
 
+// Load templates from JSON file
+async function loadTemplates() {
+    try {
+        const response = await fetch('/api/templates');
+        promptTemplates = await response.json();
+        renderTemplateButtons();
+    } catch (error) {
+        console.error('Error loading templates:', error);
+        promptTemplates = {};
+    }
+}
+
+// Render template buttons dynamically
+function renderTemplateButtons() {
+    const container = document.querySelector('.template-buttons');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    for (const [key, template] of Object.entries(promptTemplates)) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-template';
+        btn.dataset.template = key;
+        btn.textContent = template.name;
+        btn.title = template.description || '';
+        btn.addEventListener('click', function() {
+            applyTemplate(this.dataset.template);
+        });
+        container.appendChild(btn);
+    }
+}
+
+// Setup all event listeners
 function setupEventListeners() {
     document.getElementById('prevBtn').addEventListener('click', prevStep);
     document.getElementById('nextBtn').addEventListener('click', nextStep);
     document.getElementById('createBtn').addEventListener('click', createAgent);
 
+    // Temperature slider
     const tempSlider = document.getElementById('temperature');
     if (tempSlider) {
         tempSlider.addEventListener('input', function() {
@@ -72,6 +71,7 @@ function setupEventListeners() {
         });
     }
 
+    // Field input handler
     const fieldInput = document.getElementById('fieldInput');
     if (fieldInput) {
         fieldInput.addEventListener('keydown', function(e) {
@@ -89,12 +89,7 @@ function setupEventListeners() {
         });
     }
 
-    document.querySelectorAll('.btn-template').forEach(btn => {
-        btn.addEventListener('click', function() {
-            applyTemplate(this.dataset.template);
-        });
-    });
-
+    // Tab buttons for file preview
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -104,6 +99,7 @@ function setupEventListeners() {
     });
 }
 
+// Add fields from input
 function addFieldsFromInput(value) {
     const fields = value.split(/[,\s\n]+/).filter(f => f.trim() !== '');
     fields.forEach(field => {
@@ -116,38 +112,141 @@ function addFieldsFromInput(value) {
     updateHiddenFieldsInput();
 }
 
+// Add field tag element
 function addFieldTag(field) {
     const container = document.getElementById('fieldsContainer');
     const input = document.getElementById('fieldInput');
     const tag = document.createElement('span');
     tag.className = 'field-tag';
-    tag.innerHTML = field + ' <button type="button" onclick="removeField(\'' + field + '\', this)">&times;</button>';
+    tag.dataset.field = field;
+    tag.innerHTML = `${field} <button type="button" onclick="removeField('${field}', this)">×</button>`;
     container.insertBefore(tag, input);
 }
 
+// Remove field
 function removeField(field, button) {
     formData.required_fields = formData.required_fields.filter(f => f !== field);
     button.parentElement.remove();
     updateHiddenFieldsInput();
 }
 
+// Update hidden input
 function updateHiddenFieldsInput() {
     document.getElementById('requiredFields').value = formData.required_fields.join(',');
 }
 
+// Apply template
 function applyTemplate(templateName) {
     const template = promptTemplates[templateName];
     if (!template) return;
+    
+    // Clear existing fields
     formData.required_fields = [];
     document.querySelectorAll('#fieldsContainer .field-tag').forEach(tag => tag.remove());
+    
+    // Add new fields
     template.fields.forEach(field => {
         formData.required_fields.push(field);
         addFieldTag(field);
     });
     updateHiddenFieldsInput();
+    
+    // Set prompt template
     document.getElementById('promptTemplate').value = template.template;
     formData.prompt_template = template.template;
+    
+    // Set model role
+    if (template.role) {
+        document.getElementById('modelRole').value = template.role;
+        formData.model_role = template.role;
+    }
+    
+    // Set output format
+    if (template.output_format) {
+        const formatCards = document.querySelectorAll('.format-card');
+        formatCards.forEach(card => {
+            card.classList.remove('selected');
+            const input = card.querySelector('input');
+            if (input && input.value === template.output_format) {
+                card.classList.add('selected');
+                input.checked = true;
+            }
+        });
+        formData.output_format = template.output_format;
+    }
+    
+    // Visual feedback - highlight active template button
+    document.querySelectorAll('.btn-template').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.template === templateName) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Show selected template indicator
+    showTemplateIndicator(template.name, templateName);
 }
+
+// Show template indicator
+function showTemplateIndicator(name, key) {
+    let indicator = document.querySelector('.template-selected');
+    
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'template-selected';
+        indicator.innerHTML = `
+            <span>Using template: <span class="template-name"></span></span>
+            <button type="button" class="clear-btn" onclick="clearTemplate()">✕ Clear</button>
+        `;
+        const templateButtons = document.querySelector('.template-buttons');
+        if (templateButtons) {
+            templateButtons.after(indicator);
+        }
+    }
+    
+    indicator.querySelector('.template-name').textContent = name;
+    indicator.classList.add('show');
+}
+
+// Clear template
+function clearTemplate() {
+    // Clear fields
+    formData.required_fields = [];
+    document.querySelectorAll('#fieldsContainer .field-tag').forEach(tag => tag.remove());
+    updateHiddenFieldsInput();
+    
+    // Clear prompt
+    document.getElementById('promptTemplate').value = '';
+    formData.prompt_template = '';
+    
+    // Clear model role
+    document.getElementById('modelRole').value = '';
+    formData.model_role = '';
+    
+    // Reset output format to default
+    const formatCards = document.querySelectorAll('.format-card');
+    formatCards.forEach((card, index) => {
+        card.classList.remove('selected');
+        const input = card.querySelector('input');
+        if (index === 0 && input) {
+            card.classList.add('selected');
+            input.checked = true;
+        }
+    });
+    formData.output_format = 'plain_text';
+    
+    // Remove active state from buttons
+    document.querySelectorAll('.btn-template').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Hide indicator
+    const indicator = document.querySelector('.template-selected');
+    if (indicator) {
+        indicator.classList.remove('show');
+    }
+}
+// Load tools from API
 async function loadTools() {
     try {
         const response = await fetch('/api/tools');
@@ -167,6 +266,7 @@ async function loadTools() {
             </div>
         `).join('');
 
+        // Add click handlers for visual feedback
         grid.querySelectorAll('.tool-card').forEach(card => {
             const checkbox = card.querySelector('input[type="checkbox"]');
             checkbox.addEventListener('change', function() {
@@ -178,6 +278,7 @@ async function loadTools() {
     }
 }
 
+// Load formats from API
 async function loadFormats() {
     try {
         const response = await fetch('/api/formats');
@@ -195,6 +296,7 @@ async function loadFormats() {
             </div>
         `).join('');
 
+        // Add click handlers
         grid.querySelectorAll('.format-card').forEach(card => {
             card.addEventListener('click', function() {
                 grid.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
@@ -207,6 +309,7 @@ async function loadFormats() {
     }
 }
 
+// Load models from API
 async function loadModels() {
     try {
         const response = await fetch('/api/models');
@@ -220,21 +323,29 @@ async function loadModels() {
     }
 }
 
+// Update progress bar
 function updateProgress() {
     const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
     document.getElementById('progressFill').style.width = progress + '%';
+    
     document.querySelectorAll('.step').forEach((step, index) => {
         const stepNum = index + 1;
         step.classList.remove('active', 'completed');
-        if (stepNum === currentStep) step.classList.add('active');
-        else if (stepNum < currentStep) step.classList.add('completed');
+        if (stepNum === currentStep) {
+            step.classList.add('active');
+        } else if (stepNum < currentStep) {
+            step.classList.add('completed');
+        }
     });
 }
 
+// Show specific step
 function showStep(step) {
     document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
     document.querySelector(`.form-step[data-step="${step}"]`).classList.add('active');
+    
     document.getElementById('prevBtn').disabled = step === 1;
+    
     if (step === totalSteps) {
         document.getElementById('nextBtn').style.display = 'none';
         document.getElementById('createBtn').style.display = 'inline-block';
@@ -243,9 +354,11 @@ function showStep(step) {
         document.getElementById('nextBtn').style.display = 'inline-block';
         document.getElementById('createBtn').style.display = 'none';
     }
+    
     updateProgress();
 }
 
+// Collect all form data
 function collectFormData() {
     formData.agent_name = document.getElementById('agentName').value.trim();
     formData.agent_description = document.getElementById('agentDescription').value.trim();
@@ -255,17 +368,23 @@ function collectFormData() {
     formData.temperature = parseFloat(document.getElementById('temperature').value) || 0.7;
     formData.prompt_template = document.getElementById('promptTemplate').value.trim();
     
+    // Collect all selected tools
     formData.tools = [];
     document.querySelectorAll('#toolsGrid input[type="checkbox"]:checked').forEach(cb => {
         formData.tools.push(cb.value);
     });
     
+    // Collect output format
     const formatRadio = document.querySelector('input[name="output_format"]:checked');
-    if (formatRadio) formData.output_format = formatRadio.value;
+    if (formatRadio) {
+        formData.output_format = formatRadio.value;
+    }
 }
 
+// Validate current step
 function validateStep(step) {
     collectFormData();
+    
     switch(step) {
         case 1:
             if (!formData.agent_name) {
@@ -277,18 +396,22 @@ function validateStep(step) {
                 return false;
             }
             return true;
+            
         case 2:
             if (!formData.model_role) {
                 alert('Please enter a system role/persona');
                 return false;
             }
             return true;
+            
         case 3:
+            // Process any remaining input in the field
             const fieldInput = document.getElementById('fieldInput');
             if (fieldInput && fieldInput.value.trim()) {
                 addFieldsFromInput(fieldInput.value);
                 fieldInput.value = '';
             }
+            
             if (formData.required_fields.length === 0) {
                 alert('Please add at least one required field.\n\nType field names separated by commas, then press Enter.');
                 return false;
@@ -298,11 +421,13 @@ function validateStep(step) {
                 return false;
             }
             return true;
+            
         default:
             return true;
     }
 }
 
+// Go to next step
 function nextStep() {
     if (validateStep(currentStep)) {
         currentStep++;
@@ -310,14 +435,17 @@ function nextStep() {
     }
 }
 
+// Go to previous step
 function prevStep() {
     if (currentStep > 1) {
         currentStep--;
         showStep(currentStep);
     }
 }
+// Update review section
 function updateReview() {
     collectFormData();
+    
     const summary = document.getElementById('configSummary');
     summary.innerHTML = `
         <div class="summary-item"><strong>Name:</strong> ${formData.agent_name}</div>
@@ -329,24 +457,35 @@ function updateReview() {
         <div class="summary-item"><strong>Tools:</strong> ${formData.tools.length > 0 ? formData.tools.join(', ') : 'None'}</div>
         <div class="summary-item"><strong>Output Format:</strong> ${formData.output_format}</div>
     `;
+    
     updateFilePreview('config');
 }
 
+// Update file preview
 async function updateFilePreview(fileType) {
     const preview = document.getElementById('filePreview');
+    
     try {
         const response = await fetch('/api/preview', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
+        
         const data = await response.json();
+        
         if (data.success) {
             let content = '';
             switch(fileType) {
-                case 'config': content = data.files['config.json']; break;
-                case 'agent': content = data.files['agent.py']; break;
-                case 'readme': content = data.files['README.md']; break;
+                case 'config':
+                    content = data.files['config.json'];
+                    break;
+                case 'agent':
+                    content = data.files['agent.py'];
+                    break;
+                case 'readme':
+                    content = data.files['README.md'];
+                    break;
             }
             preview.querySelector('code').textContent = content;
         }
@@ -355,8 +494,10 @@ async function updateFilePreview(fileType) {
     }
 }
 
+// Create the agent
 async function createAgent() {
     collectFormData();
+    
     const createBtn = document.getElementById('createBtn');
     createBtn.disabled = true;
     createBtn.textContent = 'Creating...';
@@ -367,7 +508,9 @@ async function createAgent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
+        
         const data = await response.json();
+        
         if (data.success) {
             document.getElementById('successMessage').innerHTML = `
                 Agent created at:<br>
@@ -390,14 +533,17 @@ async function createAgent() {
         document.getElementById('errorMessage').textContent = error.message;
         document.getElementById('errorModal').classList.add('show');
     }
+    
     createBtn.disabled = false;
     createBtn.textContent = '🚀 Create Agent';
 }
 
+// Close modal
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');
 }
 
+// Close modal on backdrop click
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal')) {
         e.target.classList.remove('show');

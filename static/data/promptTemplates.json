@@ -1,0 +1,82 @@
+{
+  "summarizer": {
+    "name": "📝 Summarizer",
+    "description": "Summarize content into key points",
+    "fields": ["content", "length"],
+    "role": "You are an expert content summarizer who creates clear, concise summaries.",
+    "template": "Summarize the following content in {length} sentences:\n\n{content}\n\nProvide a clear, concise summary capturing the main points.",
+    "output_format": "plain_text"
+  },
+  "flashcard": {
+    "name": "📚 Flashcard",
+    "description": "Create Q&A flashcards from content",
+    "fields": ["content", "num_cards"],
+    "role": "You are an expert educator who creates clear, memorable flashcards for effective learning.",
+    "template": "Create {num_cards} flashcard Q&A pairs from this content:\n\n{content}\n\nReturn as JSON array: [{\"question\": \"...\", \"answer\": \"...\"}]",
+    "output_format": "json"
+  },
+  "email": {
+    "name": "✉️ Email",
+    "description": "Generate professional emails",
+    "fields": ["recipient", "subject", "tone", "key_points"],
+    "role": "You are a professional email writer who crafts clear, effective emails.",
+    "template": "Write a {tone} email to {recipient} about: {subject}\n\nKey points to include:\n{key_points}\n\nOutput only the email text with appropriate greeting and signature.",
+    "output_format": "plain_text"
+  },
+  "qa": {
+    "name": "❓ Q&A",
+    "description": "Answer questions from context",
+    "fields": ["context", "question"],
+    "role": "You are a helpful assistant that answers questions accurately based on provided context.",
+    "template": "Based on the following context, answer the question.\n\nContext:\n{context}\n\nQuestion: {question}\n\nProvide a clear and accurate answer based only on the given context.",
+    "output_format": "plain_text"
+  },
+  "translator": {
+    "name": "🌐 Translator",
+    "description": "Translate text between languages",
+    "fields": ["content", "target_language"],
+    "role": "You are an expert translator who provides accurate, natural-sounding translations.",
+    "template": "Translate the following text to {target_language}:\n\n{content}\n\nProvide only the translation without explanations.",
+    "output_format": "plain_text"
+  },
+  "blog_writer": {
+    "name": "📰 Blog Writer",
+    "description": "Generate blog posts from topics",
+    "fields": ["topic", "tone", "word_count"],
+    "role": "You are a skilled blog writer who creates engaging, well-structured articles.",
+    "template": "Write a {tone} blog post about: {topic}\n\nTarget length: approximately {word_count} words.\n\nInclude an engaging introduction, clear sections, and a conclusion.",
+    "output_format": "markdown"
+  },
+  "code_explainer": {
+    "name": "💻 Code Explainer",
+    "description": "Explain code in simple terms",
+    "fields": ["code", "detail_level"],
+    "role": "You are a programming teacher who explains code clearly to developers of all skill levels.",
+    "template": "Explain the following code with {detail_level} detail:\n\n```\n{code}\n```\n\nBreak down what each part does and explain the overall purpose.",
+    "output_format": "markdown"
+  },
+  "bullet_points": {
+    "name": "📋 Bullet Points",
+    "description": "Extract key points as bullets",
+    "fields": ["content", "num_points"],
+    "role": "You are an expert at distilling information into clear, actionable bullet points.",
+    "template": "Extract exactly {num_points} key bullet points from this content:\n\n{content}\n\nFormat as a clean bulleted list with concise, informative points.",
+    "output_format": "markdown"
+  },
+  "pros_cons": {
+    "name": "⚖️ Pros & Cons",
+    "description": "Analyze pros and cons of a topic",
+    "fields": ["topic", "num_points"],
+    "role": "You are an analytical thinker who provides balanced, objective analysis.",
+    "template": "Analyze the pros and cons of: {topic}\n\nProvide {num_points} pros and {num_points} cons.\n\nFormat as two clear sections with bullet points.",
+    "output_format": "markdown"
+  },
+  "social_media": {
+    "name": "📱 Social Post",
+    "description": "Create social media posts",
+    "fields": ["topic", "platform", "tone"],
+    "role": "You are a social media expert who creates engaging, platform-appropriate posts.",
+    "template": "Create a {tone} social media post for {platform} about:\n\n{topic}\n\nInclude relevant hashtags and keep it appropriate for the platform's style and character limits.",
+    "output_format": "plain_text"
+  }
+}
