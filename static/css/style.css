@@ -217,12 +217,96 @@ header p {
     letter-spacing: 0.5px;
 }
 
+/* Template Header with Hamburger */
+.template-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.hamburger-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.hamburger-btn:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.hamburger-icon {
+    font-size: 1.2rem;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    position: relative;
+    display: none;
+    margin-bottom: 1rem;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: var(--primary-color);
+}
+
+.dropdown-item-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-item-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.dropdown-item:hover .dropdown-item-desc {
+    color: rgba(255, 255, 255, 0.8);
+}
+
 /* Template Buttons */
 .template-hint {
     font-size: 0.85rem;
     color: var(--text-secondary);
     margin-bottom: 0.75rem;
-    margin-top: -0.25rem;
 }
 
 .template-buttons {
@@ -664,6 +748,22 @@ header p {
     .step span {
         width: 28px;
         height: 28px;
+    }
+    
+    .template-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .hamburger-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .dropdown-content {
+        width: 100%;
+        position: relative;
     }
     
     .template-buttons {

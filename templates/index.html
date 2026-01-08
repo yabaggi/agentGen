@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Agent Generator</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
@@ -13,168 +13,163 @@
             <p>Create custom AI agents in minutes</p>
         </header>
 
-        <!-- Progress Bar -->
         <div class="progress-container">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
             <div class="steps">
-                <div class="step active" data-step="1"><span>1</span>Basic Info</div>
-                <div class="step" data-step="2"><span>2</span>Model</div>
-                <div class="step" data-step="3"><span>3</span>Prompt</div>
-                <div class="step" data-step="4"><span>4</span>Tools</div>
-                <div class="step" data-step="5"><span>5</span>Output</div>
-                <div class="step" data-step="6"><span>6</span>Review</div>
+                <div class="step active"><span>1</span>Basic</div>
+                <div class="step"><span>2</span>Model</div>
+                <div class="step"><span>3</span>Prompt</div>
+                <div class="step"><span>4</span>Tools</div>
+                <div class="step"><span>5</span>Output</div>
+                <div class="step"><span>6</span>Review</div>
             </div>
         </div>
 
-        <!-- Form Steps -->
         <div class="form-container">
             <!-- Step 1: Basic Info -->
             <div class="form-step active" data-step="1">
                 <h2>Basic Information</h2>
-                <p class="step-description">Give your agent a name and description</p>
+                <p class="step-description">Name your agent or select a template to get started</p>
+                
+                <div class="form-group">
+                    <div class="template-header">
+                        <label>Quick Templates (Optional)</label>
+                        <button type="button" class="hamburger-btn" id="hamburgerBtn" title="View all templates">
+                            <span class="hamburger-icon">☰</span>
+                            <span class="hamburger-text">All Templates</span>
+                        </button>
+                    </div>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dropdown-content" id="dropdownContent">
+                        </div>
+                    </div>
+                    <p class="template-hint">Select a template to auto-fill all configuration</p>
+                    <div class="template-buttons" id="templateButtons">
+                        <span class="loading-text">Loading templates...</span>
+                    </div>
+                </div>
+                
+                <div class="divider"><span>or configure manually</span></div>
                 
                 <div class="form-group">
                     <label for="agentName">Agent Name *</label>
                     <input type="text" id="agentName" placeholder="e.g., content_summarizer" required>
-                    <span class="hint">Use lowercase letters, numbers, and underscores only</span>
+                    <span class="hint">Lowercase, letters, numbers, and underscores only</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="agentDescription">Description</label>
-                    <textarea id="agentDescription" rows="3" placeholder="Describe what your agent does..."></textarea>
+                    <textarea id="agentDescription" rows="2" placeholder="What does your agent do?"></textarea>
                 </div>
             </div>
-
-            
             <!-- Step 2: Model Config -->
-<div class="form-step" data-step="2">
-    <h2>Model Configuration</h2>
-    <p class="step-description">Choose a template or configure manually</p>
-    
-    <div class="form-group">
-        <label>Quick Templates (Optional)</label>
-        <p class="template-hint">Select a template to auto-fill model role, fields, and prompt</p>
-        <div class="template-buttons" id="templateButtons">
-            <span class="loading-text">Loading templates...</span>
-        </div>
-    </div>
-    
-    <div class="divider"><span>or configure manually</span></div>
-    
-    <div class="form-group">
-        <label for="modelSelect">LLM Model *</label>
-        <select id="modelSelect">
-            <option value="gemini-flash">Loading models...</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <label for="modelRole">System Role / Persona *</label>
-        <textarea id="modelRole" rows="3" placeholder="e.g., You are an expert content writer who creates engaging summaries..."></textarea>
-    </div>
-    
-    <div class="form-row">
-        <div class="form-group">
-            <label for="maxTokens">Max Tokens</label>
-            <input type="number" id="maxTokens" value="1000" min="100" max="4000">
-        </div>
-        <div class="form-group">
-            <label for="temperature">Temperature: <span id="tempValue">0.7</span></label>
-            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
-        </div>
-    </div>
-</div>
-
-<!-- Step 3: Prompt Config -->
-<div class="form-step" data-step="3">
-    <h2>Prompt Configuration</h2>
-    <p class="step-description">Define input fields and prompt template</p>
-    
-    <div class="form-group">
-        <label>Required Input Fields *</label>
-        <div class="tags-input" id="fieldsContainer">
-            <input type="text" id="fieldInput" placeholder="Type field name, press Enter (e.g., content, num_cards)">
-        </div>
-        <input type="hidden" id="requiredFields">
-        <span class="hint">These are the variables your agent will accept as input. Use {field_name} in the prompt template below.</span>
-    </div>
-    
-    <div class="form-group">
-        <label for="promptTemplate">Prompt Template *</label>
-        <textarea id="promptTemplate" rows="10" placeholder="Use {field_name} for variables, e.g.:
-
-Summarize the following content in {length} sentences:
-
-{content}
-
-Provide a clear, concise summary."></textarea>
-        <span class="hint">Use {field_name} syntax to insert user inputs into the prompt</span>
-    </div>
-</div>
-            
+            <div class="form-step" data-step="2">
+                <h2>Model Configuration</h2>
+                <p class="step-description">Configure the AI model settings</p>
+                
+                <div class="form-group">
+                    <label for="modelSelect">LLM Model *</label>
+                    <select id="modelSelect">
+                        <option value="gemini-flash">Loading models...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="modelRole">System Role / Persona *</label>
+                    <textarea id="modelRole" rows="3" placeholder="e.g., You are an expert content writer who creates engaging summaries..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maxTokens">Max Tokens</label>
+                        <input type="number" id="maxTokens" value="1000" min="100" max="4000">
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">Temperature: <span id="tempValue">0.7</span></label>
+                        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                    </div>
+                </div>
+            </div>
+            <!-- Step 3: Prompt Config -->
+            <div class="form-step" data-step="3">
+                <h2>Prompt Configuration</h2>
+                <p class="step-description">Define input fields and prompt template</p>
+                
+                <div class="form-group">
+                    <label>Required Input Fields *</label>
+                    <div class="tags-input" id="fieldsContainer">
+                        <input type="text" id="fieldInput" placeholder="Type field name, press Enter (e.g., content, num_cards)">
+                    </div>
+                    <input type="hidden" id="requiredFields">
+                    <span class="hint">These are the variables your agent will accept as input.</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="promptTemplate">Prompt Template *</label>
+                    <textarea id="promptTemplate" rows="10" placeholder="Use {field_name} for variables"></textarea>
+                    <span class="hint">Use {field_name} syntax to insert user inputs into the prompt</span>
+                </div>
+            </div>
             <!-- Step 4: Tools -->
             <div class="form-step" data-step="4">
                 <h2>Tools Selection</h2>
-                <p class="step-description">Select tools your agent can use (optional - select multiple)</p>
+                <p class="step-description">Select preprocessing tools (optional)</p>
                 
                 <div class="tools-grid" id="toolsGrid">
-                    <!-- Tools loaded via JS -->
                 </div>
             </div>
 
-            <!-- Step 5: Output Format -->
+            <!-- Step 5: Output -->
             <div class="form-step" data-step="5">
                 <h2>Output Format</h2>
-                <p class="step-description">Choose how your agent should format its output</p>
+                <p class="step-description">Choose how the response should be formatted</p>
                 
                 <div class="format-grid" id="formatGrid">
-                    <!-- Formats loaded via JS -->
                 </div>
             </div>
-
             <!-- Step 6: Review -->
             <div class="form-step" data-step="6">
                 <h2>Review & Create</h2>
-                <p class="step-description">Review your configuration before creating the agent</p>
+                <p class="step-description">Review your configuration and create the agent</p>
                 
                 <div class="review-section">
                     <h3>Configuration Summary</h3>
-                    <div id="configSummary" class="config-summary"></div>
+                    <div class="config-summary" id="configSummary">
+                    </div>
                 </div>
                 
                 <div class="review-section">
-                    <h3>File Preview</h3>
+                    <h3>Preview Files</h3>
                     <div class="tabs">
-                        <button class="tab-btn active" data-tab="config">config.json</button>
-                        <button class="tab-btn" data-tab="agent">agent.py</button>
-                        <button class="tab-btn" data-tab="readme">README.md</button>
+                        <button type="button" class="tab-btn active" data-tab="config">config.json</button>
+                        <button type="button" class="tab-btn" data-tab="agent">agent.py</button>
+                        <button type="button" class="tab-btn" data-tab="readme">README.md</button>
                     </div>
-                    <pre id="filePreview"><code>Select a tab to preview file contents</code></pre>
+                    <div id="filePreview">
+                        <code></code>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Navigation Buttons -->
         <div class="nav-buttons">
-            <button id="prevBtn" class="btn btn-secondary" disabled>← Previous</button>
-            <button id="nextBtn" class="btn btn-primary">Next →</button>
-            <button id="createBtn" class="btn btn-success" style="display: none;">🚀 Create Agent</button>
+            <button type="button" class="btn btn-secondary" id="prevBtn" disabled>← Previous</button>
+            <button type="button" class="btn btn-primary" id="nextBtn">Next →</button>
+            <button type="button" class="btn btn-success" id="createBtn" style="display: none;">🚀 Create Agent</button>
         </div>
     </div>
-
     <!-- Success Modal -->
     <div class="modal" id="successModal">
         <div class="modal-content">
             <div class="modal-header success">
-                <h2>✅ Agent Created Successfully!</h2>
+                <h2>✅ Agent Created!</h2>
             </div>
-            <div class="modal-body">
-                <p id="successMessage"></p>
+            <div class="modal-body" id="successMessage">
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeModal('successModal'); location.reload();">Create Another</button>
+                <button class="btn btn-primary" onclick="closeModal('successModal')">Close</button>
             </div>
         </div>
     </div>
@@ -185,16 +180,14 @@ Provide a clear, concise summary."></textarea>
             <div class="modal-header error">
                 <h2>❌ Error</h2>
             </div>
-            <div class="modal-body">
-                <p id="errorMessage"></p>
+            <div class="modal-body" id="errorMessage">
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('errorModal')">Close</button>
+                <button class="btn btn-primary" onclick="closeModal('errorModal')">Close</button>
             </div>
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
-

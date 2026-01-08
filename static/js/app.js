@@ -30,6 +30,7 @@ async function loadTemplates() {
         const response = await fetch('/api/templates');
         promptTemplates = await response.json();
         renderTemplateButtons();
+        renderDropdownMenu();
     } catch (error) {
         console.error('Error loading templates:', error);
         promptTemplates = {};
@@ -43,7 +44,11 @@ function renderTemplateButtons() {
     
     container.innerHTML = '';
     
-    for (const [key, template] of Object.entries(promptTemplates)) {
+    // Show only first 6 templates as buttons
+    const templateEntries = Object.entries(promptTemplates);
+    const visibleTemplates = templateEntries.slice(0, 6);
+    
+    for (const [key, template] of visibleTemplates) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn-template';
@@ -55,6 +60,52 @@ function renderTemplateButtons() {
         });
         container.appendChild(btn);
     }
+    
+    // Show count of additional templates
+    if (templateEntries.length > 6) {
+        const moreBtn = document.createElement('button');
+        moreBtn.type = 'button';
+        moreBtn.className = 'btn-template';
+        moreBtn.textContent = `+${templateEntries.length - 6} more`;
+        moreBtn.title = 'Click "All Templates" to see more';
+        moreBtn.addEventListener('click', toggleDropdown);
+        container.appendChild(moreBtn);
+    }
+}
+
+// Render dropdown menu with all templates
+function renderDropdownMenu() {
+    const container = document.getElementById('dropdownContent');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    for (const [key, template] of Object.entries(promptTemplates)) {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.dataset.template = key;
+        item.innerHTML = `
+            <div class="dropdown-item-name">${template.name}</div>
+            <div class="dropdown-item-desc">${template.description}</div>
+        `;
+        item.addEventListener('click', function() {
+            applyTemplate(this.dataset.template);
+            closeDropdown();
+        });
+        container.appendChild(item);
+    }
+}
+
+// Toggle dropdown menu
+function toggleDropdown() {
+    const dropdown = document.getElementById('dropdownMenu');
+    dropdown.classList.toggle('show');
+}
+
+// Close dropdown menu
+function closeDropdown() {
+    const dropdown = document.getElementById('dropdownMenu');
+    dropdown.classList.remove('show');
 }
 
 // Setup all event listeners
@@ -62,6 +113,21 @@ function setupEventListeners() {
     document.getElementById('prevBtn').addEventListener('click', prevStep);
     document.getElementById('nextBtn').addEventListener('click', nextStep);
     document.getElementById('createBtn').addEventListener('click', createAgent);
+
+    // Hamburger button
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleDropdown);
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('dropdownMenu');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        if (dropdown && hamburgerBtn && !dropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+            closeDropdown();
+        }
+    });
 
     // Temperature slider
     const tempSlider = document.getElementById('temperature');
@@ -134,34 +200,77 @@ function removeField(field, button) {
 function updateHiddenFieldsInput() {
     document.getElementById('requiredFields').value = formData.required_fields.join(',');
 }
-
-// Apply template
+// Apply template - AUTO POPULATES ALL FIELDS
 function applyTemplate(templateName) {
     const template = promptTemplates[templateName];
     if (!template) return;
     
-    // Clear existing fields
+    // 1. Set Agent Name
+    if (template.agent_name) {
+        document.getElementById('agentName').value = template.agent_name;
+        formData.agent_name = template.agent_name;
+    }
+    
+    // 2. Set Agent Description
+    if (template.description) {
+        document.getElementById('agentDescription').value = template.description;
+        formData.agent_description = template.description;
+    }
+    
+    // 3. Clear existing fields and add new ones
     formData.required_fields = [];
     document.querySelectorAll('#fieldsContainer .field-tag').forEach(tag => tag.remove());
     
-    // Add new fields
     template.fields.forEach(field => {
         formData.required_fields.push(field);
         addFieldTag(field);
     });
     updateHiddenFieldsInput();
     
-    // Set prompt template
+    // 4. Set prompt template
     document.getElementById('promptTemplate').value = template.template;
     formData.prompt_template = template.template;
     
-    // Set model role
+    // 5. Set model role
     if (template.role) {
         document.getElementById('modelRole').value = template.role;
         formData.model_role = template.role;
     }
     
-    // Set output format
+    // 6. Set suggested model
+    if (template.suggested_model) {
+        const modelSelect = document.getElementById('modelSelect');
+        if (modelSelect) {
+            const optionExists = Array.from(modelSelect.options).some(opt => opt.value === template.suggested_model);
+            if (optionExists) {
+                modelSelect.value = template.suggested_model;
+                formData.model_id = template.suggested_model;
+            }
+        }
+    }
+    
+    // 7. Set tools
+    // First, uncheck all tools
+    document.querySelectorAll('#toolsGrid input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.tool-card')?.classList.remove('selected');
+    });
+    
+    // Then check the template's tools
+    if (template.tools && Array.isArray(template.tools)) {
+        template.tools.forEach(toolId => {
+            const checkbox = document.querySelector(`#toolsGrid input[value="${toolId}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+                checkbox.closest('.tool-card')?.classList.add('selected');
+            }
+        });
+        formData.tools = [...template.tools];
+    } else {
+        formData.tools = [];
+    }
+    
+    // 8. Set output format
     if (template.output_format) {
         const formatCards = document.querySelectorAll('.format-card');
         formatCards.forEach(card => {
@@ -175,7 +284,7 @@ function applyTemplate(templateName) {
         formData.output_format = template.output_format;
     }
     
-    // Visual feedback - highlight active template button
+    // 9. Visual feedback - highlight active template button
     document.querySelectorAll('.btn-template').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.template === templateName) {
@@ -183,7 +292,7 @@ function applyTemplate(templateName) {
         }
     });
     
-    // Show selected template indicator
+    // 10. Show selected template indicator
     showTemplateIndicator(template.name, templateName);
 }
 
@@ -210,6 +319,12 @@ function showTemplateIndicator(name, key) {
 
 // Clear template
 function clearTemplate() {
+    // Clear agent name and description
+    document.getElementById('agentName').value = '';
+    document.getElementById('agentDescription').value = '';
+    formData.agent_name = '';
+    formData.agent_description = '';
+    
     // Clear fields
     formData.required_fields = [];
     document.querySelectorAll('#fieldsContainer .field-tag').forEach(tag => tag.remove());
@@ -222,6 +337,20 @@ function clearTemplate() {
     // Clear model role
     document.getElementById('modelRole').value = '';
     formData.model_role = '';
+    
+    // Reset model to default
+    const modelSelect = document.getElementById('modelSelect');
+    if (modelSelect && modelSelect.options.length > 0) {
+        modelSelect.selectedIndex = 0;
+        formData.model_id = modelSelect.value;
+    }
+    
+    // Clear all tools
+    document.querySelectorAll('#toolsGrid input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.tool-card')?.classList.remove('selected');
+    });
+    formData.tools = [];
     
     // Reset output format to default
     const formatCards = document.querySelectorAll('.format-card');
@@ -246,6 +375,7 @@ function clearTemplate() {
         indicator.classList.remove('show');
     }
 }
+
 // Load tools from API
 async function loadTools() {
     try {
@@ -266,7 +396,6 @@ async function loadTools() {
             </div>
         `).join('');
 
-        // Add click handlers for visual feedback
         grid.querySelectorAll('.tool-card').forEach(card => {
             const checkbox = card.querySelector('input[type="checkbox"]');
             checkbox.addEventListener('change', function() {
@@ -296,7 +425,6 @@ async function loadFormats() {
             </div>
         `).join('');
 
-        // Add click handlers
         grid.querySelectorAll('.format-card').forEach(card => {
             card.addEventListener('click', function() {
                 grid.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
@@ -322,7 +450,6 @@ async function loadModels() {
         console.error('Error loading models:', error);
     }
 }
-
 // Update progress bar
 function updateProgress() {
     const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
@@ -368,13 +495,11 @@ function collectFormData() {
     formData.temperature = parseFloat(document.getElementById('temperature').value) || 0.7;
     formData.prompt_template = document.getElementById('promptTemplate').value.trim();
     
-    // Collect all selected tools
     formData.tools = [];
     document.querySelectorAll('#toolsGrid input[type="checkbox"]:checked').forEach(cb => {
         formData.tools.push(cb.value);
     });
     
-    // Collect output format
     const formatRadio = document.querySelector('input[name="output_format"]:checked');
     if (formatRadio) {
         formData.output_format = formatRadio.value;
@@ -405,7 +530,6 @@ function validateStep(step) {
             return true;
             
         case 3:
-            // Process any remaining input in the field
             const fieldInput = document.getElementById('fieldInput');
             if (fieldInput && fieldInput.value.trim()) {
                 addFieldsFromInput(fieldInput.value);
@@ -442,6 +566,7 @@ function prevStep() {
         showStep(currentStep);
     }
 }
+
 // Update review section
 function updateReview() {
     collectFormData();
