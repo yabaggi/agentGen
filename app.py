@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import os
 import json
+import zipfile
+import io
 
 app = Flask(__name__)
 
@@ -81,9 +83,37 @@ def create_agent():
             with open(fpath, "w", encoding="utf-8") as f:
                 f.write(content)
         generate_infra(agent_dir)
-        return jsonify({"success": True, "path": agent_dir})
+        return jsonify({"success": True, "path": agent_dir, "agent_name": name})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+@app.route("/api/download/<agent_name>", methods=["GET"])
+def download_agent(agent_name):
+    try:
+        agent_dir = os.path.join(OUTPUT_DIR, "agents", agent_name)
+        
+        if not os.path.exists(agent_dir):
+            return jsonify({"success": False, "error": "Agent not found"}), 404
+        
+        memory_file = io.BytesIO()
+        
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(agent_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.join(agent_name, os.path.relpath(file_path, agent_dir))
+                    zf.write(file_path, arcname)
+        
+        memory_file.seek(0)
+        
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=agent_name + '.zip'
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/preview", methods=["POST"])
 def preview_agent():
@@ -94,13 +124,125 @@ def preview_agent():
         return jsonify({"success": True, "files": files})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
-
+def get_mobile_template(name, description, fields):
+    display_name = name.replace("_", " ").title()
+    
+    form_html = ""
+    for field in fields:
+        label = field.replace("_", " ").title()
+        form_html += '<div class="input-group">'
+        form_html += '<label for="' + field + '">' + label + '</label>'
+        form_html += '<textarea id="' + field + '" name="' + field + '" rows="3" placeholder="Enter ' + label.lower() + '..." required></textarea>'
+        form_html += '</div>'
+    
+    html = []
+    html.append('<!DOCTYPE html>')
+    html.append('<html lang="en">')
+    html.append('<head>')
+    html.append('<meta charset="UTF-8">')
+    html.append('<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">')
+    html.append('<title>' + display_name + '</title>')
+    html.append('<style>')
+    html.append('* { box-sizing: border-box; margin: 0; padding: 0; }')
+    html.append(':root { --primary: #6366f1; --primary-dark: #4f46e5; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; --success: #22c55e; --error: #ef4444; }')
+    html.append('body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: 100dvh; }')
+    html.append('.container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }')
+    html.append('.header { text-align: center; padding: 24px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }')
+    html.append('.header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }')
+    html.append('.header p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }')
+    html.append('.card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }')
+    html.append('.input-group { margin-bottom: 20px; }')
+    html.append('.input-group:last-child { margin-bottom: 0; }')
+    html.append('label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }')
+    html.append('textarea { width: 100%; padding: 14px; font-size: 16px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); resize: vertical; min-height: 80px; transition: border-color 0.2s, box-shadow 0.2s; }')
+    html.append('textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }')
+    html.append('textarea::placeholder { color: var(--text-muted); }')
+    html.append('.btn-container { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(transparent, var(--bg) 20%); }')
+    html.append('.btn { width: 100%; max-width: 600px; margin: 0 auto; display: block; padding: 16px 24px; font-size: 1rem; font-weight: 600; color: white; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; border-radius: 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; }')
+    html.append('.btn:active { transform: scale(0.98); }')
+    html.append('.btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }')
+    html.append('.result-card { background: var(--card); border-radius: 16px; padding: 20px; margin-top: 16px; border: 1px solid var(--border); display: none; }')
+    html.append('.result-card.show { display: block; animation: fadeIn 0.3s ease; }')
+    html.append('.result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }')
+    html.append('.result-title { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }')
+    html.append('.result-content { font-size: 1rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }')
+    html.append('.copy-btn { padding: 8px 12px; font-size: 0.75rem; background: var(--border); color: var(--text); border: none; border-radius: 8px; cursor: pointer; }')
+    html.append('.loading { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }')
+    html.append('.status { text-align: center; padding: 40px 20px; color: var(--text-muted); }')
+    html.append('.status.error { color: var(--error); }')
+    html.append('.status.success { color: var(--success); }')
+    html.append('@keyframes spin { to { transform: rotate(360deg); } }')
+    html.append('@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }')
+    html.append('@media (min-width: 640px) { .container { padding: 24px; } .header h1 { font-size: 2rem; } .card { padding: 24px; } }')
+    html.append('</style>')
+    html.append('</head>')
+    html.append('<body>')
+    html.append('<div class="container">')
+    html.append('<div class="header">')
+    html.append('<h1>' + display_name + '</h1>')
+    html.append('<p>' + (description or 'AI-powered assistant ready to help you.') + '</p>')
+    html.append('</div>')
+    html.append('<form id="agentForm" class="card">')
+    html.append(form_html)
+    html.append('</form>')
+    html.append('<div id="resultCard" class="result-card">')
+    html.append('<div class="result-header">')
+    html.append('<span class="result-title">Response</span>')
+    html.append('<button type="button" class="copy-btn" onclick="copyResult()">Copy</button>')
+    html.append('</div>')
+    html.append('<div id="resultContent" class="result-content"></div>')
+    html.append('</div>')
+    html.append('</div>')
+    html.append('<div class="btn-container">')
+    html.append('<button type="submit" form="agentForm" class="btn" id="submitBtn">Generate Response</button>')
+    html.append('</div>')
+    html.append('<script>')
+    html.append('const form = document.getElementById("agentForm");')
+    html.append('const btn = document.getElementById("submitBtn");')
+    html.append('const resultCard = document.getElementById("resultCard");')
+    html.append('const resultContent = document.getElementById("resultContent");')
+    html.append('form.onsubmit = async function(e) {')
+    html.append('  e.preventDefault();')
+    html.append('  btn.disabled = true;')
+    html.append('  btn.innerHTML = "<span class=\\"loading\\"></span>Processing...";')
+    html.append('  resultCard.classList.remove("show");')
+    html.append('  const formData = new FormData(this);')
+    html.append('  const data = Object.fromEntries(formData.entries());')
+    html.append('  try {')
+    html.append('    const res = await fetch("/run", {')
+    html.append('      method: "POST",')
+    html.append('      headers: {"Content-Type": "application/json"},')
+    html.append('      body: JSON.stringify(data)')
+    html.append('    });')
+    html.append('    const json = await res.json();')
+    html.append('    resultContent.textContent = json.response || json.error || "No response";')
+    html.append('    resultCard.classList.add("show");')
+    html.append('  } catch (err) {')
+    html.append('    resultContent.textContent = "Error: " + err.message;')
+    html.append('    resultCard.classList.add("show");')
+    html.append('  }')
+    html.append('  btn.disabled = false;')
+    html.append('  btn.textContent = "Generate Response";')
+    html.append('};')
+    html.append('function copyResult() {')
+    html.append('  navigator.clipboard.writeText(resultContent.textContent);')
+    html.append('  const btn = document.querySelector(".copy-btn");')
+    html.append('  btn.textContent = "Copied!";')
+    html.append('  setTimeout(() => btn.textContent = "Copy", 2000);')
+    html.append('}')
+    html.append('</script>')
+    html.append('</body>')
+    html.append('</html>')
+    
+    return "\n".join(html)
 def generate_agent_files(data, name):
     cls = name.title().replace("_", "")
     fields = data.get("required_fields", [])
+    description = data.get("agent_description", "")
     
     cfg = {
         "name": name,
+        "description": description,
         "model": data.get("model_id"),
         "role": data.get("model_role"),
         "prompt_template": data.get("prompt_template"),
@@ -124,63 +266,20 @@ def generate_agent_files(data, name):
     a.append("        return call_llm(prompt, self.config['model'])")
     agent_py = "\n".join(a)
 
-    form_fields = ""
-    for field in fields:
-        label = field.replace("_", " ").title()
-        form_fields += "<label>" + label + "</label>"
-        form_fields += "<textarea name='" + field + "' rows='3' required></textarea>"
+    mobile_html = get_mobile_template(name, description, fields)
 
     w = []
-    w.append("from flask import Flask, request, jsonify, render_template_string")
+    w.append("from flask import Flask, request, jsonify")
     w.append("from agent import " + cls + "Agent")
     w.append("")
     w.append("app = Flask(__name__)")
     w.append("agent = " + cls + "Agent()")
     w.append("")
-    w.append("HTML = '''")
-    w.append("<!DOCTYPE html>")
-    w.append("<html>")
-    w.append("<head>")
-    w.append("    <title>" + name.upper() + " Agent</title>")
-    w.append("    <style>")
-    w.append("        body { font-family: Arial; max-width: 800px; margin: 50px auto; padding: 20px; }")
-    w.append("        h1 { color: #333; }")
-    w.append("        label { display: block; margin-top: 15px; font-weight: bold; }")
-    w.append("        textarea { width: 100%; padding: 10px; margin-top: 5px; }")
-    w.append("        button { margin-top: 20px; padding: 12px 24px; background: #007bff; color: white; border: none; cursor: pointer; }")
-    w.append("        button:hover { background: #0056b3; }")
-    w.append("        #result { margin-top: 20px; padding: 15px; background: #f5f5f5; white-space: pre-wrap; }")
-    w.append("    </style>")
-    w.append("</head>")
-    w.append("<body>")
-    w.append("    <h1>" + name.replace("_", " ").title() + " Agent</h1>")
-    w.append("    <form id='agentForm'>")
-    w.append("        " + form_fields)
-    w.append("        <button type='submit'>Run Agent</button>")
-    w.append("    </form>")
-    w.append("    <div id='result'></div>")
-    w.append("    <script>")
-    w.append("        document.getElementById('agentForm').onsubmit = async function(e) {")
-    w.append("            e.preventDefault();")
-    w.append("            const formData = new FormData(this);")
-    w.append("            const data = Object.fromEntries(formData.entries());")
-    w.append("            document.getElementById('result').innerText = 'Processing...';")
-    w.append("            const res = await fetch('/run', {")
-    w.append("                method: 'POST',")
-    w.append("                headers: {'Content-Type': 'application/json'},")
-    w.append("                body: JSON.stringify(data)")
-    w.append("            });")
-    w.append("            const json = await res.json();")
-    w.append("            document.getElementById('result').innerText = json.response || json.error;")
-    w.append("        };")
-    w.append("    </script>")
-    w.append("</body>")
-    w.append("</html>")
-    w.append("'''")
+    w.append("HTML = '''" + mobile_html + "'''")
     w.append("")
     w.append("@app.route('/')")
     w.append("def home():")
-    w.append("    return render_template_string(HTML)")
+    w.append("    return HTML")
     w.append("")
     w.append("@app.route('/run', methods=['POST'])")
     w.append("def run():")
@@ -193,24 +292,13 @@ def generate_agent_files(data, name):
     w.append("")
     w.append("if __name__ == '__main__':")
     w.append("    print('Agent running at http://localhost:5001')")
-    w.append("    app.run(port=5001, debug=True)")
+    w.append("    app.run(host='0.0.0.0', port=5001, debug=True)")
     web_py = "\n".join(w)
-
-    r = []
-    r.append("AGENT: " + name.upper())
-    r.append("")
-    r.append("SETUP:")
-    r.append("1. Edit config/keys.yaml with your API keys")
-    r.append("2. pip install flask pyyaml requests")
-    r.append("3. python web_app.py")
-    r.append("4. Open http://localhost:5001")
-    readme = "\n".join(r)
 
     return {
         "config.json": json.dumps(cfg, indent=2),
         "agent.py": agent_py,
-        "web_app.py": web_py,
-        "README.txt": readme
+        "web_app.py": web_py
     }
 
 def generate_infra(base):
@@ -231,7 +319,7 @@ def generate_infra(base):
     l.append("from .utils import get_key")
     l.append("def call_llm(prompt, model):")
     l.append("    key = get_key('google')")
-    l.append("    return 'Response from ' + model")
+    l.append("    return 'Response from ' + model + ': This is a placeholder. Connect your API.'")
     with open(os.path.join(core, "llm_caller.py"), "w") as f:
         f.write("\n".join(l))
 

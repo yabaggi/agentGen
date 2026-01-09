@@ -16,6 +16,7 @@ let formData = {
     output_format: 'plain_text'
 };
 
+
 document.addEventListener('DOMContentLoaded', function() {
     loadTemplates();
     loadTools();
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadModels();
     setupEventListeners();
     updateProgress();
+    showStep(1);
 });
 
 async function loadTemplates() {
@@ -550,12 +552,14 @@ async function updateFilePreview(fileType) {
     }
 }
 
+
+
 async function createAgent() {
     collectFormData();
     
     const createBtn = document.getElementById('createBtn');
     createBtn.disabled = true;
-    createBtn.textContent = 'Creating...';
+    createBtn.innerHTML = '<span class="btn-loading"></span> Creating...';
 
     try {
         const response = await fetch('/api/create', {
@@ -567,7 +571,25 @@ async function createAgent() {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('successMessage').innerHTML = 'Agent created at:<br><code>' + data.path + '</code><br><br><strong>To run:</strong><br><code>cd ' + data.path + ' && python web_app.py</code>';
+            createBtn.innerHTML = '<span class="btn-loading"></span> Downloading...';
+            
+            const downloadUrl = '/api/download/' + data.agent_name;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = data.agent_name + '.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            document.getElementById('successMessage').innerHTML = 
+                'Agent created and downloaded!<br><br>' +
+                '<strong>Zip file:</strong> ' + data.agent_name + '.zip<br><br>' +
+                '<strong>To run:</strong><br>' +
+                '1. Unzip the file<br>' +
+                '2. Open terminal in the folder<br>' +
+                '3. Run: <code>pip install flask pyyaml requests</code><br>' +
+                '4. Run: <code>python web_app.py</code><br>' +
+                '5. Open: <code>http://localhost:5001</code>';
             document.getElementById('successModal').classList.add('show');
         } else {
             document.getElementById('errorMessage').textContent = data.error;
@@ -579,8 +601,9 @@ async function createAgent() {
     }
     
     createBtn.disabled = false;
-    createBtn.textContent = 'Create Agent';
+    createBtn.innerHTML = '📦 Create & Download';
 }
+
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');
@@ -591,3 +614,5 @@ document.addEventListener('click', function(e) {
         e.target.classList.remove('show');
     }
 });
+
+
