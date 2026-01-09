@@ -10,18 +10,39 @@ MODELS = [
     {"id": "gemini-flash", "name": "Gemini Flash", "provider": "google"},
     {"id": "gemini-pro", "name": "Gemini Pro", "provider": "google"},
     {"id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B", "provider": "groq"},
+    {"id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B", "provider": "groq"},
+    {"id": "mixtral-8x7b-32768", "name": "Mixtral 8x7B", "provider": "groq"},
     {"id": "gpt-4o", "name": "GPT-4o", "provider": "openai"},
+    {"id": "gpt-4o-mini", "name": "GPT-4o Mini", "provider": "openai"},
+    {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo", "provider": "openai"},
 ]
 
 TOOLS = [
-    {"id": "web_scraper", "name": "Web Scraper", "description": "Extract from URLs"},
-    {"id": "text_cleaner", "name": "Text Cleaner", "description": "Clean text"},
+    {"id": "web_scraper", "name": "Web Scraper", "description": "Extract content from URLs"},
+    {"id": "text_cleaner", "name": "Text Cleaner", "description": "Clean and normalize text"},
+    {"id": "file_reader", "name": "File Reader", "description": "Read content from files"},
+    {"id": "pdf_parser", "name": "PDF Parser", "description": "Extract text from PDFs"},
+    {"id": "image_analyzer", "name": "Image Analyzer", "description": "Analyze images"},
+    {"id": "data_validator", "name": "Data Validator", "description": "Validate data formats"},
+    {"id": "api_caller", "name": "API Caller", "description": "Make external API requests"},
+    {"id": "calculator", "name": "Calculator", "description": "Math calculations"},
+    {"id": "translator", "name": "Translator", "description": "Translate between languages"},
+    {"id": "summarizer", "name": "Summarizer", "description": "Summarize long texts"},
+    {"id": "sentiment_analyzer", "name": "Sentiment Analyzer", "description": "Analyze sentiment"},
+    {"id": "keyword_extractor", "name": "Keyword Extractor", "description": "Extract keywords"},
 ]
 
 OUTPUT_FORMATS = [
-    {"id": "plain_text", "name": "Plain Text", "description": "Simple text"},
-    {"id": "json", "name": "JSON", "description": "Structured data"},
+    {"id": "plain_text", "name": "Plain Text", "description": "Simple text output"},
+    {"id": "json", "name": "JSON", "description": "Structured JSON data"},
+    {"id": "markdown", "name": "Markdown", "description": "Formatted markdown"},
+    {"id": "html", "name": "HTML", "description": "HTML formatted output"},
+    {"id": "csv", "name": "CSV", "description": "Comma-separated values"},
+    {"id": "xml", "name": "XML", "description": "XML structured data"},
+    {"id": "yaml", "name": "YAML", "description": "YAML formatted output"},
+    {"id": "table", "name": "Table", "description": "Tabular format"},
 ]
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -73,6 +94,7 @@ def preview_agent():
         return jsonify({"success": True, "files": files})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
 def generate_agent_files(data, name):
     cls = name.title().replace("_", "")
     fields = data.get("required_fields", [])
@@ -82,7 +104,9 @@ def generate_agent_files(data, name):
         "model": data.get("model_id"),
         "role": data.get("model_role"),
         "prompt_template": data.get("prompt_template"),
-        "required_fields": fields
+        "required_fields": fields,
+        "tools": data.get("tools", []),
+        "output_format": data.get("output_format", "plain_text")
     }
 
     a = []
@@ -188,6 +212,7 @@ def generate_agent_files(data, name):
         "web_app.py": web_py,
         "README.txt": readme
     }
+
 def generate_infra(base):
     core = os.path.join(base, "core")
     
