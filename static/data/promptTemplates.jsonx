@@ -16,9 +16,9 @@
     "description": "Create Q&A flashcards from content",
     "fields": ["content", "num_cards"],
     "role": "You are an expert educator who creates clear, memorable flashcards optimized for effective learning and retention.",
-    "template": "You are a helpful study assistant. Create exactly {num_cards} flashcards from the following text.\n\nRules:\n- Each flashcard must be a clear question and a concise answer (under 30 words).\n- Do NOT include markdown, numbering, or extra text.\n- Avoid yes/no questions.\n- Base answers ONLY on the provided text. Do not invent facts.\n\nText: \"{content}\"\n\nOutput format (one per line):\nQ: [question text]\nA: [answer text]",
-    "output_format": "plain_text",
-    "suggested_model": "gemini-flash",
+    "template": "Create {num_cards} flashcard Q&A pairs from this content:\n\n{content}\n\nReturn as JSON array: [{\"question\": \"...\", \"answer\": \"...\"}]",
+    "output_format": "json",
+    "suggested_model": "gemini-pro",
     "tools": ["text_cleaner"]
   },
   "email": {
@@ -71,7 +71,7 @@
     "description": "Explain code in simple terms",
     "fields": ["code", "detail_level"],
     "role": "You are a programming teacher who explains code clearly to developers of all skill levels, breaking down complex concepts into understandable parts.",
-    "template": "Explain the following code with {detail_level} detail:\n\n{code}\n\nBreak down what each part does and explain the overall purpose. Use clear language appropriate for the detail level requested.",
+    "template": "Explain the following code with {detail_level} detail:\n\n```\n{code}\n```\n\nBreak down what each part does and explain the overall purpose. Use clear language appropriate for the detail level requested.",
     "output_format": "markdown",
     "suggested_model": "gpt-4o",
     "tools": []
@@ -159,8 +159,8 @@
     "description": "Extract structured data from text",
     "fields": ["content", "fields_to_extract"],
     "role": "You are a data extraction specialist who accurately identifies and structures information from unstructured text.",
-    "template": "Extract the following information from the text below.\n\nFields to extract: {fields_to_extract}\n\nText:\n{content}\n\nProvide the extracted information in a clear, structured format. Use 'Not found' for any fields not present in the text.",
-    "output_format": "plain_text",
+    "template": "Extract the following information from the text below:\n\nFields to extract: {fields_to_extract}\n\nText:\n{content}\n\nReturn as JSON with the requested fields. Use null for any fields not found in the text.",
+    "output_format": "json",
     "suggested_model": "gpt-4o",
     "tools": ["text_cleaner"]
   },
@@ -170,7 +170,7 @@
     "description": "Analyze content from files",
     "fields": ["file_path", "content", "analysis_type"],
     "role": "You are a document analyst who provides thorough analysis and insights from file contents.",
-    "template": "Perform a {analysis_type} analysis on the following file content:\n\n{content}\n\nProvide a comprehensive analysis including:\n- Overview and Summary\n- Key findings\n- Notable patterns or insights\n- Recommendations (if applicable)",
+    "template": "Perform a {analysis_type} analysis on the following file content:\n\n{content}\n\nProvide a comprehensive analysis including:\n- Overview/Summary\n- Key findings\n- Notable patterns or insights\n- Recommendations (if applicable)",
     "output_format": "markdown",
     "suggested_model": "gemini-pro",
     "tools": ["file_reader", "text_cleaner"]
