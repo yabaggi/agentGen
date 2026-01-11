@@ -147,40 +147,59 @@ def quick_template(template_id):
         print(f"ERROR: {traceback.format_exc()}")
         return jsonify({"success": False, "error": str(e)}), 500
         
+        
+        
 @app.route("/api/create", methods=["POST"])
 def create_agent():
+    """Generate agent files in memory (no disk write for Vercel)."""
     data = request.json
     try:
         name = data.get("agent_name", "my_agent").lower().replace(" ", "_")
-        agent_dir = os.path.join(OUTPUT_DIR, "agents", name)
-        os.makedirs(os.path.join(agent_dir, "core", "tools"), exist_ok=True)
-        os.makedirs(os.path.join(agent_dir, "config"), exist_ok=True)
+        
+        # Generate all files in memory
         files = generate_agent_files(data, name)
-        for fname, content in files.items():
-            fpath = os.path.join(agent_dir, fname)
-            with open(fpath, "w", encoding="utf-8") as f:
-                f.write(content)
-        generate_infra(agent_dir)
-        return jsonify({"success": True, "path": agent_dir, "agent_name": name})
+        
+        # Add infrastructure files
+        infra_files = generate_infra_files()
+        files.update(infra_files)
+        
+        # Return files as JSON for display
+        return jsonify({
+            "success": True,
+            "agent_name": name,
+            "files": files
+        })
     except Exception as e:
+        import traceback
+        print(f"Error: {traceback.format_exc()}")
         return jsonify({"success": False, "error": str(e)})
 
-@app.route("/api/download/<agent_name>", methods=["GET"])
-def download_agent(agent_name):
+
+@app.route("/api/download/<agent_name>", methods=["POST"])
+def download_agent_zip(agent_name):
+    """Create ZIP in memory for download (no disk write)."""
     try:
-        agent_dir = os.path.join(OUTPUT_DIR, "agents", agent_name)
+        data = request.json
         
-        if not os.path.exists(agent_dir):
-            return jsonify({"success": False, "error": "Agent not found"}), 404
+        # Generate all files in memory
+        files = generate_agent_files(data, agent_name)
+        infra_files = generate_infra_files()
+        files.update(infra_files)
         
+        # Create ZIP in memory
         memory_file = io.BytesIO()
         
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for root, dirs, files in os.walk(agent_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    arcname = os.path.join(agent_name, os.path.relpath(file_path, agent_dir))
-                    zf.write(file_path, arcname)
+            for filename, content in files.items():
+                # Create proper directory structure
+                if filename.startswith('core/'):
+                    arcname = os.path.join(agent_name, filename)
+                elif filename.startswith('config/'):
+                    arcname = os.path.join(agent_name, filename)
+                else:
+                    arcname = os.path.join(agent_name, filename)
+                
+                zf.writestr(arcname, content)
         
         memory_file.seek(0)
         
@@ -188,10 +207,15 @@ def download_agent(agent_name):
             memory_file,
             mimetype='application/zip',
             as_attachment=True,
-            download_name=agent_name + '.zip'
+            download_name=f'{agent_name}.zip'
         )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+        
+        
+        
+        
+        
 
 @app.route("/api/preview", methods=["POST"])
 def preview_agent():
@@ -432,6 +456,145 @@ def generate_agent_files(data, name):
         "agent.py": agent_py,
         "web_app.py": web_py
     }
+    
+    
+    
+def generate_infra_files():
+    """Generate infrastructure files (utils, llm_caller, keys.yaml, __init__.py)."""
+    files = {}
+    
+    # core/utils.py
+    u = []
+    u.append("import yaml")
+    u.append("import os")
+    u.append("import logging")
+    u.append("")
+    u.append("logging.basicConfig(level=logging.INFO)")
+    u.append("")
+    u.append("def get_key(provider):")
+    u.append("    keys_path = os.path.join(os.path.dirname(__file__), '../config/keys.yaml')")
+    u.append("    if not os.path.exists(keys_path):")
+    u.append("        return ''")
+    u.append("    with open(keys_path, 'r') as f:")
+    u.append("        keys = yaml.safe_load(f) or {}")
+    u.append("        return keys.get(provider.upper() + '_API_KEY', '')")
+    files['core/utils.py'] = "\n".join(u)
+    
+    # core/llm_caller.py (use the complete one from earlier)
+    l = []
+    l.append("import requests")
+    l.append("import logging")
+    l.append("from .utils import get_key")
+    l.append("")
+    l.append("def call_llm(prompt, model_id):")
+    l.append("    if 'gemini' in model_id or 'google' in model_id:")
+    l.append("        return call_google(prompt, model_id)")
+    l.append("    elif 'gpt' in model_id or 'openai' in model_id:")
+    l.append("        return call_openai(prompt, model_id)")
+    l.append("    elif 'llama' in model_id or 'mixtral' in model_id or 'groq' in model_id:")
+    l.append("        return call_groq(prompt, model_id)")
+    l.append("    else:")
+    l.append("        return f'Error: Unsupported model - {model_id}'")
+    l.append("")
+    l.append("def call_google(prompt, model_id):")
+    l.append("    api_key = get_key('gemini')")
+    l.append("    if not api_key or api_key == 'your_key_here':")
+    l.append("        return 'Error: GEMINI_API_KEY not configured in config/keys.yaml'")
+    l.append("    model_name = 'gemini-flash-latest' if 'flash' in model_id.lower() else 'gemini-pro-latest'")
+    l.append("    url = f'https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}'")
+    l.append("    payload = {'contents': [{'parts': [{'text': prompt}]}]}")
+    l.append("    try:")
+    l.append("        response = requests.post(url, json=payload, timeout=30.0)")
+    l.append("        if response.status_code != 200:")
+    l.append("            error_detail = response.json().get('error', {}).get('message', 'Unknown error.')")
+    l.append("            return f'Gemini API error: {error_detail}'")
+    l.append("        return response.json()['candidates'][0]['content']['parts'][0]['text'].strip()")
+    l.append("    except Exception as e:")
+    l.append("        return f'Failed to connect to Gemini API: {str(e)}'")
+    l.append("")
+    l.append("def call_groq(prompt, model_id):")
+    l.append("    api_key = get_key('groq')")
+    l.append("    if not api_key or api_key == 'your_key_here':")
+    l.append("        return 'Error: GROQ_API_KEY not configured in config/keys.yaml'")
+    l.append("    url = 'https://api.groq.com/openai/v1/chat/completions'")
+    l.append("    headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}")
+    l.append("    model = model_id if 'llama' in model_id or 'mixtral' in model_id else 'llama-3.1-8b-instant'")
+    l.append("    payload = {'model': model, 'messages': [{'role': 'user', 'content': prompt}], 'temperature': 0.3}")
+    l.append("    try:")
+    l.append("        response = requests.post(url, json=payload, headers=headers, timeout=30.0)")
+    l.append("        if response.status_code != 200:")
+    l.append("            error_detail = response.json().get('error', {}).get('message', 'Unknown error.')")
+    l.append("            return f'Groq API error: {error_detail}'")
+    l.append("        return response.json()['choices'][0]['message']['content'].strip()")
+    l.append("    except Exception as e:")
+    l.append("        return f'Failed to connect to Groq API: {str(e)}'")
+    l.append("")
+    l.append("def call_openai(prompt, model_id):")
+    l.append("    api_key = get_key('openai')")
+    l.append("    if not api_key or api_key == 'your_key_here':")
+    l.append("        return 'Error: OPENAI_API_KEY not configured in config/keys.yaml'")
+    l.append("    url = 'https://api.openai.com/v1/chat/completions'")
+    l.append("    headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}")
+    l.append("    model = model_id if 'gpt' in model_id else 'gpt-4o-mini'")
+    l.append("    payload = {'model': model, 'messages': [{'role': 'user', 'content': prompt}], 'temperature': 0.3}")
+    l.append("    try:")
+    l.append("        response = requests.post(url, json=payload, headers=headers, timeout=30.0)")
+    l.append("        if response.status_code != 200:")
+    l.append("            error_detail = response.json().get('error', {}).get('message', 'Unknown error.')")
+    l.append("            return f'OpenAI API error: {error_detail}'")
+    l.append("        return response.json()['choices'][0]['message']['content'].strip()")
+    l.append("    except Exception as e:")
+    l.append("        return f'Failed to connect to OpenAI API: {str(e)}'")
+    files['core/llm_caller.py'] = "\n".join(l)
+    
+    # config/keys.yaml
+    k = []
+    k.append("# Add your API keys here")
+    k.append("# Gemini: https://makersuite.google.com/app/apikey")
+    k.append("# Groq: https://console.groq.com/keys")
+    k.append("# OpenAI: https://platform.openai.com/api-keys")
+    k.append("")
+    k.append("GEMINI_API_KEY: your_key_here")
+    k.append("GROQ_API_KEY: your_key_here")
+    k.append("OPENAI_API_KEY: your_key_here")
+    files['config/keys.yaml'] = "\n".join(k)
+    
+    # __init__.py files
+    files['core/__init__.py'] = ""
+    files['core/tools/__init__.py'] = ""
+    
+    # README.txt
+    r = []
+    r.append("# AI Agent - Setup Instructions")
+    r.append("")
+    r.append("## Quick Start")
+    r.append("")
+    r.append("1. Install dependencies:")
+    r.append("   pip install flask pyyaml requests")
+    r.append("")
+    r.append("2. Add your API key to config/keys.yaml")
+    r.append("")
+    r.append("3. Run the agent:")
+    r.append("   python web_app.py")
+    r.append("")
+    r.append("4. Open browser:")
+    r.append("   http://localhost:5001")
+    r.append("")
+    r.append("## File Structure")
+    r.append("")
+    r.append("- agent.py         : Main agent logic")
+    r.append("- web_app.py       : Web interface")
+    r.append("- config.json      : Agent configuration")
+    r.append("- config/keys.yaml : API keys (add yours here)")
+    r.append("- core/            : Core infrastructure")
+    r.append("")
+    r.append("## Configuration")
+    r.append("")
+    r.append("Edit config/keys.yaml and add your API key based on the model you're using.")
+    files['README.txt'] = "\n".join(r)
+    
+    return files
+    
    
 def generate_infra(base):
     """Generate core infrastructure with CORRECT Gemini model names."""

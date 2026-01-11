@@ -45,163 +45,6 @@ OUTPUT_FORMATS = [
     {"id": "table", "name": "Table", "description": "Tabular format"},
 ]
 
-# Quick Templates - Using YOUR WORKING prompt format (NO JSON BRACES!)
-QUICK_TEMPLATES = {
-    'bullet_extractor': {
-        'name': 'bullet_extractor',
-        'description': 'Extracts key bullet points from text',
-        'model': 'gemini-flash',
-        'fields': ['content', 'num_points'],
-        'prompt_template': 'Extract {num_points} key bullet points from the following content:\n\n{content}'
-    },
-    'flashcard_generator': {
-        'name': 'flashcard_generator',
-        'description': 'Generates flashcards from content',
-        'model': 'gemini-flash',
-        'fields': ['content', 'num_cards'],
-        # FIXED: Using YOUR working prompt format - NO JSON BRACES!
-        'prompt_template': '''You are a helpful study assistant. Create exactly {num_cards} flashcards from the following text.
-
-Rules:
-- Each flashcard must be a clear question and a concise answer (under 30 words).
-- Do NOT include markdown, numbering, or extra text.
-- Avoid yes/no questions.
-- Base answers ONLY on the provided text. Do not invent facts.
-
-Text: "{content}"
-
-Output format (one per line):
-Q: [question text]
-A: [answer text]'''
-    },
-    'summarizer': {
-        'name': 'summarizer',
-        'description': 'Summarizes text to specified length',
-        'model': 'gemini-flash',
-        'fields': ['content', 'length'],
-        'prompt_template': 'Summarize the following content in {length} words:\n\n{content}'
-    },
-    'email_writer': {
-        'name': 'email_writer',
-        'description': 'Writes professional emails',
-        'model': 'gemini-flash',
-        'fields': ['topic', 'tone'],
-        'prompt_template': 'Write a {tone} email about the following topic:\n\n{topic}'
-    },
-    'code_explainer': {
-        'name': 'code_explainer',
-        'description': 'Explains code in simple terms',
-        'model': 'gemini-flash',
-        'fields': ['code', 'language'],
-        'prompt_template': 'Explain this {language} code in simple terms:\n\n{code}'
-    },
-    'blog_writer': {
-        'name': 'blog_writer',
-        'description': 'Writes blog posts on any topic',
-        'model': 'gemini-flash',
-        'fields': ['topic', 'word_count'],
-        'prompt_template': 'Write a {word_count} word blog post about:\n\n{topic}'
-    },
-    'quiz_generator': {
-        'name': 'quiz_generator',
-        'description': 'Creates multiple choice quizzes',
-        'model': 'gemini-flash',
-        'fields': ['topic', 'num_questions'],
-        'prompt_template': 'Create a {num_questions} question multiple choice quiz about:\n\n{topic}\n\nFor each question provide:\n- The question\n- 4 options (A, B, C, D)\n- The correct answer'
-    },
-    'social_media_post': {
-        'name': 'social_media_post',
-        'description': 'Creates engaging social media posts',
-        'model': 'gemini-flash',
-        'fields': ['topic', 'platform'],
-        'prompt_template': 'Write an engaging {platform} post about:\n\n{topic}'
-    },
-    'meeting_notes': {
-        'name': 'meeting_notes',
-        'description': 'Organizes meeting notes with action items',
-        'model': 'gemini-flash',
-        'fields': ['notes'],
-        'prompt_template': 'Organize these meeting notes into sections:\n\n1. Summary\n2. Key Points\n3. Action Items\n4. Next Steps\n\nNotes:\n{notes}'
-    },
-    'product_description': {
-        'name': 'product_description',
-        'description': 'Writes compelling product descriptions',
-        'model': 'gemini-flash',
-        'fields': ['product_name', 'features'],
-        'prompt_template': 'Write a compelling product description for {product_name} with these features:\n\n{features}'
-    },
-    'code_reviewer': {
-        'name': 'code_reviewer',
-        'description': 'Reviews code and suggests improvements',
-        'model': 'gemini-flash',
-        'fields': ['code', 'language'],
-        'prompt_template': 'Review this {language} code and suggest improvements for readability, performance, security, and best practices:\n\n{code}'
-    },
-    'essay_writer': {
-        'name': 'essay_writer',
-        'description': 'Writes structured essays',
-        'model': 'gemini-flash',
-        'fields': ['topic', 'word_count'],
-        'prompt_template': 'Write a {word_count} word essay on:\n\n{topic}\n\nInclude:\n- Introduction with thesis statement\n- 3 body paragraphs with supporting evidence\n- Conclusion that reinforces the thesis'
-    },
-    'job_description': {
-        'name': 'job_description',
-        'description': 'Creates professional job descriptions',
-        'model': 'gemini-flash',
-        'fields': ['job_title', 'requirements'],
-        'prompt_template': 'Write a professional job description for {job_title} with these requirements:\n\n{requirements}\n\nInclude:\n- Overview\n- Responsibilities\n- Qualifications\n- Benefits'
-    },
-    'story_writer': {
-        'name': 'story_writer',
-        'description': 'Writes creative short stories',
-        'model': 'gemini-flash',
-        'fields': ['theme', 'word_count'],
-        'prompt_template': 'Write a {word_count} word creative story about:\n\n{theme}'
-    },
-    'recipe_generator': {
-        'name': 'recipe_generator',
-        'description': 'Creates detailed recipes',
-        'model': 'gemini-flash',
-        'fields': ['dish_name', 'servings'],
-        'prompt_template': 'Create a detailed recipe for {dish_name} that serves {servings} people.\n\nInclude:\n- Ingredients list\n- Step-by-step instructions\n- Prep time\n- Cook time\n- Tips'
-    },
-    'study_guide': {
-        'name': 'study_guide',
-        'description': 'Creates comprehensive study guides',
-        'model': 'gemini-flash',
-        'fields': ['topic', 'content'],
-        'prompt_template': 'Create a comprehensive study guide for {topic} covering:\n\n{content}\n\nInclude:\n- Key Concepts\n- Important Terms and Definitions\n- Practice Questions\n- Study Tips'
-    },
-    'cover_letter': {
-        'name': 'cover_letter',
-        'description': 'Writes professional cover letters',
-        'model': 'gemini-flash',
-        'fields': ['job_title', 'company', 'experience'],
-        'prompt_template': 'Write a professional cover letter for the position of {job_title} at {company}.\n\nHighlight this experience:\n{experience}'
-    },
-    'press_release': {
-        'name': 'press_release',
-        'description': 'Writes formal press releases',
-        'model': 'gemini-flash',
-        'fields': ['announcement', 'company'],
-        'prompt_template': 'Write a professional press release for {company} announcing:\n\n{announcement}\n\nFollow standard press release format with headline, dateline, body, and boilerplate.'
-    },
-    'translation': {
-        'name': 'translation',
-        'description': 'Translates text between languages',
-        'model': 'gemini-flash',
-        'fields': ['text', 'source_lang', 'target_lang'],
-        'prompt_template': 'Translate this text from {source_lang} to {target_lang}:\n\n{text}'
-    },
-    'seo_optimizer': {
-        'name': 'seo_optimizer',
-        'description': 'Optimizes content for SEO',
-        'model': 'gemini-flash',
-        'fields': ['content', 'keywords'],
-        'prompt_template': 'Optimize this content for SEO using these keywords: {keywords}\n\nOriginal content:\n{content}\n\nProvide:\n1. Optimized title (60 chars max)\n2. Meta description (155 chars max)\n3. Improved content with keywords naturally integrated'
-    }
-}
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -220,6 +63,7 @@ def get_formats():
 
 @app.route("/api/templates", methods=["GET"])
 def get_templates():
+    """Load templates from JSON file."""
     json_path = os.path.join("static", "data", "promptTemplates.json")
     if os.path.exists(json_path):
         try:
@@ -227,31 +71,69 @@ def get_templates():
                 return jsonify(json.load(f))
         except Exception as e:
             print(f"Error loading templates from JSON: {e}")
+            return jsonify({"error": "Failed to load templates"}), 500
     
-    return jsonify(list(QUICK_TEMPLATES.values()))
+    return jsonify({"error": "Templates file not found"}), 404
 
-@app.route("/api/quick/<template_name>", methods=["GET"])
-def quick_template(template_name):
-    if template_name not in QUICK_TEMPLATES:
-        return jsonify({"success": False, "error": "Template not found"}), 404
+@app.route("/api/quick/<template_id>", methods=["GET"])
+
+@app.route("/api/quick/<template_id>", methods=["GET"])
+def quick_template(template_id):
+    """Generate agent from quick template."""
+    json_path = os.path.join("static", "data", "promptTemplates.json")
+    
+    if not os.path.exists(json_path):
+        return jsonify({"success": False, "error": "Templates file not found"}), 404
     
     try:
-        template = QUICK_TEMPLATES[template_name]
-        agent_dir = os.path.join(OUTPUT_DIR, "agents", template['name'])
+        with open(json_path, "r") as f:
+            templates = json.load(f)
+        
+        if template_id not in templates:
+            return jsonify({"success": False, "error": "Template not found"}), 404
+        
+        template = templates[template_id]
+        
+        # DEBUG: Print what we loaded
+        print(f"\n=== DEBUG: Loading template '{template_id}' ===")
+        print(f"Template keys: {template.keys()}")
+        print(f"Has 'hints' key: {'hints' in template}")
+        if 'hints' in template:
+            print(f"Hints content: {template['hints']}")
+        print("=" * 50 + "\n")
+        
+        agent_name = template['agent_name']
+        agent_dir = os.path.join(OUTPUT_DIR, "agents", agent_name)
         os.makedirs(os.path.join(agent_dir, "core", "tools"), exist_ok=True)
         os.makedirs(os.path.join(agent_dir, "config"), exist_ok=True)
         
+        # Load hints from template
+        hints = template.get('hints', {})
+        
+        # DEBUG: Print hints being passed
+        print(f"Hints being passed to generator: {hints}")
+        
         data = {
-            "agent_name": template['name'],
+            "agent_name": agent_name,
             "agent_description": template['description'],
-            "model_id": template['model'],
-            "prompt_template": template['prompt_template'],
+            "model_id": template.get('suggested_model', 'gemini-flash'),
+            "model_role": template.get('role', ''),
+            "prompt_template": template['template'],
             "required_fields": template['fields'],
-            "tools": [],
-            "output_format": "plain_text"
+            "field_hints": hints,  # Pass hints here
+            "tools": template.get('tools', []),
+            "output_format": template.get('output_format', 'plain_text')
         }
         
-        files = generate_agent_files(data, template['name'])
+        # DEBUG: Print full data dict
+        print(f"Full data dict: {json.dumps(data, indent=2)}")
+        
+        files = generate_agent_files(data, agent_name)
+        
+        # DEBUG: Check generated config
+        config_content = json.loads(files['config.json'])
+        print(f"Generated config field_hints: {config_content.get('field_hints', {})}")
+        
         for fname, content in files.items():
             fpath = os.path.join(agent_dir, fname)
             with open(fpath, "w", encoding="utf-8") as f:
@@ -259,10 +141,12 @@ def quick_template(template_name):
         
         generate_infra(agent_dir)
         
-        return jsonify({"success": True, "path": agent_dir, "agent_name": template['name']})
+        return jsonify({"success": True, "path": agent_dir, "agent_name": agent_name})
     except Exception as e:
+        import traceback
+        print(f"ERROR: {traceback.format_exc()}")
         return jsonify({"success": False, "error": str(e)}), 500
-
+        
 @app.route("/api/create", methods=["POST"])
 def create_agent():
     data = request.json
@@ -320,15 +204,23 @@ def preview_agent():
         return jsonify({"success": False, "error": str(e)})
 
 
-def get_mobile_template(name, description, fields):
+def get_mobile_template(name, description, fields, hints):
+    """Generate mobile-friendly HTML template with hints."""
     display_name = name.replace("_", " ").title()
     
     form_html = ""
     for field in fields:
         label = field.replace("_", " ").title()
+        hint = hints.get(field, "") if hints else ""
+        
         form_html += '<div class="input-group">'
         form_html += '<label for="' + field + '">' + label + '</label>'
         form_html += '<textarea id="' + field + '" name="' + field + '" rows="4" placeholder="Enter ' + label.lower() + '..." required></textarea>'
+        
+        # Add hint if available
+        if hint:
+            form_html += '<small class="hint">' + hint + '</small>'
+        
         form_html += '</div>'
     
     html = []
@@ -350,6 +242,8 @@ def get_mobile_template(name, description, fields):
     html.append('label { display: block; font-weight: 600; margin-bottom: 8px; color: #e2e8f0; }')
     html.append('textarea { width: 100%; padding: 14px; font-size: 16px; border: 2px solid #334155; border-radius: 10px; background: #0f172a; color: #f8fafc; resize: vertical; font-family: inherit; }')
     html.append('textarea:focus { outline: none; border-color: #6366f1; }')
+    # NEW: Hint styling
+    html.append('.hint { display: block; margin-top: 6px; font-size: 0.85rem; color: #94a3b8; font-style: italic; line-height: 1.4; }')
     html.append('.btn-fixed { position: fixed; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #0f172a 80%, transparent); }')
     html.append('.btn { width: 100%; max-width: 700px; margin: 0 auto; display: block; padding: 16px; font-size: 1.1rem; font-weight: 600; color: white; background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; border-radius: 12px; cursor: pointer; transition: transform 0.1s; }')
     html.append('.btn:active { transform: scale(0.98); }')
@@ -447,6 +341,7 @@ def generate_agent_files(data, name):
     fields = data.get("required_fields", [])
     description = data.get("agent_description", "")
     prompt_template = data.get("prompt_template", "").strip()
+    hints = data.get("field_hints", {})  # NEW: Get hints
     
     if not prompt_template:
         field_placeholders = "\n".join([f"{field.replace('_', ' ').title()}: {{{field}}}" for field in fields])
@@ -459,6 +354,7 @@ def generate_agent_files(data, name):
         "role": data.get("model_role", ""),
         "prompt_template": prompt_template,
         "required_fields": fields,
+        "field_hints": hints,  # NEW: Store hints in config
         "tools": data.get("tools", []),
         "output_format": data.get("output_format", "plain_text")
     }
@@ -502,7 +398,7 @@ def generate_agent_files(data, name):
     a.append("        return result")
     agent_py = "\n".join(a)
 
-    mobile_html = get_mobile_template(name, description, fields)
+    mobile_html = get_mobile_template(name, description, fields, hints)  # NEW: Pass hints
 
     w = []
     w.append("from flask import Flask, request, jsonify")
@@ -746,3 +642,4 @@ def generate_infra(base):
 if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     app.run(port=5000, debug=True)
+

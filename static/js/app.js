@@ -575,7 +575,7 @@ async function createAgent() {
     
     const createBtn = document.getElementById('createBtn');
     createBtn.disabled = true;
-    createBtn.innerHTML = '<span class="btn-loading"></span> Creating...';
+    createBtn.innerHTML = '<span class="btn-loading"></span> Generating...';
 
     try {
         const response = await fetch('/api/create', {
@@ -587,26 +587,8 @@ async function createAgent() {
         const data = await response.json();
         
         if (data.success) {
-            createBtn.innerHTML = '<span class="btn-loading"></span> Downloading...';
-            
-            const downloadUrl = '/api/download/' + data.agent_name;
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = data.agent_name + '.zip';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            document.getElementById('successMessage').innerHTML = 
-                'Agent created and downloaded!<br><br>' +
-                '<strong>Zip file:</strong> ' + data.agent_name + '.zip<br><br>' +
-                '<strong>To run:</strong><br>' +
-                '1. Unzip the file<br>' +
-                '2. Open terminal in the folder<br>' +
-                '3. Run: <code>pip install flask pyyaml requests</code><br>' +
-                '4. Run: <code>python web_app.py</code><br>' +
-                '5. Open: <code>http://localhost:5001</code>';
-            document.getElementById('successModal').classList.add('show');
+            // Show generated files in modal
+            displayGeneratedFiles(data.files, data.agent_name);
         } else {
             document.getElementById('errorMessage').textContent = data.error;
             document.getElementById('errorModal').classList.add('show');
@@ -617,7 +599,111 @@ async function createAgent() {
     }
     
     createBtn.disabled = false;
-    createBtn.innerHTML = '📦 Create & Download';
+    createBtn.innerHTML = '📦 Create Agent';
+}
+
+function displayGeneratedFiles(files, agentName) {
+    const modal = document.getElementById('successModal');
+    const messageDiv = document.getElementById('successMessage');
+    
+    // Build file tree HTML
+    let html = '<h3>✅ Agent Generated Successfully!</h3>';
+    html += '<p>Copy the files below to create your agent:</p>';
+    html += '<div class="download-section">';
+    html += '<button class="btn-download" onclick="downloadAgentZip(\'' + agentName + '\')">📥 Download as ZIP</button>';
+    html += '</div>';
+    html += '<div class="files-container">';
+    
+    // Group files by category
+    const fileGroups = {
+        'Main Files': ['config.json', 'agent.py', 'web_app.py', 'README.txt'],
+        'Core Infrastructure': ['core/utils.py', 'core/llm_caller.py', 'core/__init__.py', 'core/tools/__init__.py'],
+        'Configuration': ['config/keys.yaml']
+    };
+    
+    for (const [groupName, groupFiles] of Object.entries(fileGroups)) {
+        html += '<div class="file-group">';
+        html += '<h4>' + groupName + '</h4>';
+        
+        for (const filename of groupFiles) {
+            if (files[filename]) {
+                const fileId = 'file_' + filename.replace(/[^a-z0-9]/gi, '_');
+                html += '<div class="file-item">';
+                html += '<div class="file-header" onclick="toggleFile(\'' + fileId + '\')">';
+                html += '<span class="file-icon">📄</span>';
+                html += '<span class="file-name">' + filename + '</span>';
+                html += '<button class="btn-copy-inline" onclick="event.stopPropagation(); copyFileContent(\'' + fileId + '\')">Copy</button>';
+                html += '</div>';
+                html += '<div class="file-content" id="' + fileId + '" style="display: none;">';
+                html += '<pre><code>' + escapeHtml(files[filename]) + '</code></pre>';
+                html += '</div>';
+                html += '</div>';
+            }
+        }
+        
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    
+    messageDiv.innerHTML = html;
+    modal.classList.add('show');
+}
+
+function toggleFile(fileId) {
+    const content = document.getElementById(fileId);
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+    } else {
+        content.style.display = 'none';
+    }
+}
+
+function copyFileContent(fileId) {
+    const content = document.getElementById(fileId).querySelector('code').textContent;
+    navigator.clipboard.writeText(content).then(() => {
+        // Visual feedback
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+        }, 2000);
+    });
+}
+
+async function downloadAgentZip(agentName) {
+    try {
+        const response = await fetch('/api/download/' + agentName, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = agentName + '.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert('Download failed');
+        }
+    } catch (error) {
+        alert('Download error: ' + error.message);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 
@@ -630,3 +716,4 @@ document.addEventListener('click', function(e) {
         e.target.classList.remove('show');
     }
 });
+
