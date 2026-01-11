@@ -11,6 +11,7 @@ let formData = {
     max_tokens: 1000,
     temperature: 0.7,
     required_fields: [],
+    field_hints: {},  // ← ADDED: Store hints
     prompt_template: '',
     tools: [],
     output_format: 'plain_text'
@@ -190,6 +191,10 @@ function addFieldTag(field) {
 
 function removeField(field, button) {
     formData.required_fields = formData.required_fields.filter(f => f !== field);
+    // ← ADDED: Also remove hint for this field
+    if (formData.field_hints && formData.field_hints[field]) {
+        delete formData.field_hints[field];
+    }
     button.parentElement.remove();
     updateHiddenFieldsInput();
 }
@@ -213,6 +218,7 @@ function applyTemplate(templateName) {
     }
     
     formData.required_fields = [];
+    formData.field_hints = {};  // ← ADDED: Reset hints
     document.querySelectorAll('#fieldsContainer .field-tag').forEach(tag => tag.remove());
     
     if (template.fields && template.fields.length > 0) {
@@ -222,6 +228,12 @@ function applyTemplate(templateName) {
         });
     }
     updateHiddenFieldsInput();
+    
+    // ← ADDED: Load hints from template
+    if (template.hints) {
+        formData.field_hints = { ...template.hints };
+        console.log('Loaded hints:', formData.field_hints);
+    }
     
     if (template.template) {
         document.getElementById('promptTemplate').value = template.template;
@@ -311,6 +323,7 @@ function clearTemplate() {
     formData.agent_description = '';
     
     formData.required_fields = [];
+    formData.field_hints = {};  // ← ADDED: Clear hints
     document.querySelectorAll('#fieldsContainer .field-tag').forEach(tag => tag.remove());
     updateHiddenFieldsInput();
     
@@ -455,6 +468,9 @@ function collectFormData() {
     if (formatRadio) {
         formData.output_format = formatRadio.value;
     }
+    
+    // ← ADDED: Log hints being sent (for debugging)
+    console.log('Sending formData with hints:', formData.field_hints);
 }
 
 function validateStep(step) {
@@ -614,5 +630,3 @@ document.addEventListener('click', function(e) {
         e.target.classList.remove('show');
     }
 });
-
-

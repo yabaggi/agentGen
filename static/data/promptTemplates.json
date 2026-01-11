@@ -4,6 +4,10 @@
     "agent_name": "summarizer",
     "description": "Summarize content into key points",
     "fields": ["content", "length"],
+    "hints": {
+      "content": "Paste the text, article, or document you want to summarize",
+      "length": "How many sentences should the summary be? (e.g., 3, 5, 10)"
+    },
     "role": "You are an expert content summarizer who creates clear, concise summaries that capture the essential information.",
     "template": "Summarize the following content in {length} sentences:\n\n{content}\n\nProvide a clear, concise summary capturing the main points.",
     "output_format": "plain_text",
@@ -15,6 +19,10 @@
     "agent_name": "flashcard_generator",
     "description": "Create Q&A flashcards from content",
     "fields": ["content", "num_cards"],
+    "hints": {
+      "content": "Paste the study material, notes, or text to create flashcards from",
+      "num_cards": "How many flashcards do you want? (e.g., 5, 10, 20)"
+    },
     "role": "You are an expert educator who creates clear, memorable flashcards optimized for effective learning and retention.",
     "template": "You are a helpful study assistant. Create exactly {num_cards} flashcards from the following text.\n\nRules:\n- Each flashcard must be a clear question and a concise answer (under 30 words).\n- Do NOT include markdown, numbering, or extra text.\n- Avoid yes/no questions.\n- Base answers ONLY on the provided text. Do not invent facts.\n\nText: \"{content}\"\n\nOutput format (one per line):\nQ: [question text]\nA: [answer text]",
     "output_format": "plain_text",
@@ -26,6 +34,12 @@
     "agent_name": "email_writer",
     "description": "Generate professional emails",
     "fields": ["recipient", "subject", "tone", "key_points"],
+    "hints": {
+      "recipient": "Who is this email for? (e.g., 'John Smith', 'HR Department', 'Team')",
+      "subject": "What is the main topic or purpose of the email?",
+      "tone": "Choose the style: professional, casual, formal, friendly, urgent, etc.",
+      "key_points": "List the main points or information to include in the email"
+    },
     "role": "You are a professional email writer who crafts clear, effective, and appropriately toned emails for any situation.",
     "template": "Write a {tone} email to {recipient} about: {subject}\n\nKey points to include:\n{key_points}\n\nOutput only the email text with appropriate greeting and signature.",
     "output_format": "plain_text",
@@ -37,6 +51,10 @@
     "agent_name": "qa_bot",
     "description": "Answer questions from context",
     "fields": ["context", "question"],
+    "hints": {
+      "context": "Provide the background information, document, or text that contains the answer",
+      "question": "What specific question do you want answered based on the context?"
+    },
     "role": "You are a helpful assistant that provides accurate, well-reasoned answers based strictly on the provided context.",
     "template": "Based on the following context, answer the question.\n\nContext:\n{context}\n\nQuestion: {question}\n\nProvide a clear and accurate answer based only on the given context.",
     "output_format": "plain_text",
@@ -48,6 +66,10 @@
     "agent_name": "translator",
     "description": "Translate text between languages",
     "fields": ["content", "target_language"],
+    "hints": {
+      "content": "Enter the text you want to translate",
+      "target_language": "Which language to translate to? (e.g., Spanish, French, Japanese, German)"
+    },
     "role": "You are an expert translator who provides accurate, natural-sounding translations while preserving the original meaning and tone.",
     "template": "Translate the following text to {target_language}:\n\n{content}\n\nProvide only the translation without any explanations or notes.",
     "output_format": "plain_text",
@@ -59,6 +81,11 @@
     "agent_name": "blog_writer",
     "description": "Generate blog posts from topics",
     "fields": ["topic", "tone", "word_count"],
+    "hints": {
+      "topic": "What should the blog post be about? Be specific.",
+      "tone": "What writing style? (e.g., informative, conversational, persuasive, humorous)",
+      "word_count": "Target length in words (e.g., 500, 1000, 1500)"
+    },
     "role": "You are a skilled blog writer who creates engaging, well-structured articles with compelling introductions and clear takeaways.",
     "template": "Write a {tone} blog post about: {topic}\n\nTarget length: approximately {word_count} words.\n\nInclude an engaging introduction, clear sections with headings, and a memorable conclusion.",
     "output_format": "markdown",
@@ -70,8 +97,12 @@
     "agent_name": "code_explainer",
     "description": "Explain code in simple terms",
     "fields": ["code", "detail_level"],
+    "hints": {
+      "code": "Paste the code you want explained (any programming language)",
+      "detail_level": "How detailed? (e.g., beginner, intermediate, expert, line-by-line)"
+    },
     "role": "You are a programming teacher who explains code clearly to developers of all skill levels, breaking down complex concepts into understandable parts.",
-    "template": "Explain the following code with {detail_level} detail:\n\n{code}\n\nBreak down what each part does and explain the overall purpose. Use clear language appropriate for the detail level requested.",
+    "template": "Explain the following code with {detail_level} detail:\n\n```\n{code}\n```\n\nBreak down what each part does and explain the overall purpose. Use clear language appropriate for the detail level requested.",
     "output_format": "markdown",
     "suggested_model": "gpt-4o",
     "tools": []
@@ -81,6 +112,10 @@
     "agent_name": "bullet_extractor",
     "description": "Extract key points as bullets",
     "fields": ["content", "num_points"],
+    "hints": {
+      "content": "Paste the text, article, or notes to extract key points from",
+      "num_points": "How many bullet points do you want? (e.g., 5, 10, 15)"
+    },
     "role": "You are an expert at distilling information into clear, actionable bullet points that capture the essence of any content.",
     "template": "Extract exactly {num_points} key bullet points from this content:\n\n{content}\n\nFormat as a clean bulleted list with concise, informative points. Each point should stand alone and convey a complete idea.",
     "output_format": "markdown",
@@ -92,6 +127,10 @@
     "agent_name": "pros_cons_analyzer",
     "description": "Analyze pros and cons of a topic",
     "fields": ["topic", "num_points"],
+    "hints": {
+      "topic": "What decision, product, or topic do you want to analyze?",
+      "num_points": "How many pros and cons to list? (e.g., 3, 5, 7)"
+    },
     "role": "You are an analytical thinker who provides balanced, objective analysis considering multiple perspectives.",
     "template": "Analyze the pros and cons of: {topic}\n\nProvide exactly {num_points} pros and {num_points} cons.\n\nFormat as two clear sections (Pros and Cons) with bullet points. Be balanced and objective.",
     "output_format": "markdown",
@@ -103,6 +142,11 @@
     "agent_name": "social_post_creator",
     "description": "Create social media posts",
     "fields": ["topic", "platform", "tone"],
+    "hints": {
+      "topic": "What should the post be about? Include key message or call-to-action.",
+      "platform": "Which platform? (e.g., Twitter, LinkedIn, Instagram, Facebook)",
+      "tone": "What style? (e.g., professional, casual, humorous, inspirational)"
+    },
     "role": "You are a social media expert who creates engaging, platform-appropriate posts that drive engagement.",
     "template": "Create a {tone} social media post for {platform} about:\n\n{topic}\n\nInclude relevant hashtags and keep it appropriate for the platform's style and character limits. Make it engaging and shareable.",
     "output_format": "plain_text",
@@ -114,6 +158,11 @@
     "agent_name": "web_summarizer",
     "description": "Summarize content from a URL",
     "fields": ["url", "content", "length"],
+    "hints": {
+      "url": "Enter the website URL (not used in this version, paste content below)",
+      "content": "Paste the web page content you want to summarize",
+      "length": "How many sentences should the summary be? (e.g., 3, 5, 10)"
+    },
     "role": "You are an expert at analyzing web content and creating concise, informative summaries that capture the key information.",
     "template": "Summarize the following web page content in {length} sentences:\n\n{content}\n\nProvide a clear summary highlighting the main points, key facts, and important takeaways.",
     "output_format": "markdown",
@@ -125,6 +174,11 @@
     "agent_name": "rss_digest_creator",
     "description": "Create digest from RSS feeds",
     "fields": ["rss_url", "content", "num_items"],
+    "hints": {
+      "rss_url": "Enter the RSS feed URL (not used in this version, paste content below)",
+      "content": "Paste the RSS feed content or multiple articles",
+      "num_items": "How many top items to include in the digest? (e.g., 5, 10)"
+    },
     "role": "You are a news curator who creates clear, organized digests from multiple articles.",
     "template": "Create a digest summarizing the top {num_items} items from this RSS feed content:\n\n{content}\n\nFor each item, provide:\n- A brief headline\n- 2-3 sentence summary\n- Key takeaway\n\nFormat as a clean, organized digest.",
     "output_format": "markdown",
@@ -136,6 +190,10 @@
     "agent_name": "meeting_notes_formatter",
     "description": "Format raw notes into structured minutes",
     "fields": ["content", "meeting_title"],
+    "hints": {
+      "content": "Paste your raw meeting notes, discussion points, or transcription",
+      "meeting_title": "What was the meeting about? (e.g., 'Q1 Planning', 'Team Standup')"
+    },
     "role": "You are an executive assistant who creates clear, professional meeting minutes from raw notes.",
     "template": "Convert these raw meeting notes into structured meeting minutes for: {meeting_title}\n\nRaw notes:\n{content}\n\nFormat with sections for:\n- Attendees (if mentioned)\n- Key Discussion Points\n- Decisions Made\n- Action Items (with owners if mentioned)\n- Next Steps",
     "output_format": "markdown",
@@ -147,6 +205,11 @@
     "agent_name": "product_description_writer",
     "description": "Generate compelling product descriptions",
     "fields": ["product_name", "features", "target_audience"],
+    "hints": {
+      "product_name": "What is the product called?",
+      "features": "List key features, benefits, or specifications (one per line)",
+      "target_audience": "Who is this product for? (e.g., 'busy professionals', 'fitness enthusiasts')"
+    },
     "role": "You are a skilled copywriter who creates compelling, conversion-focused product descriptions.",
     "template": "Write a compelling product description for: {product_name}\n\nKey features:\n{features}\n\nTarget audience: {target_audience}\n\nCreate an engaging description that highlights benefits, addresses the target audience's needs, and includes a call to action.",
     "output_format": "plain_text",
@@ -158,6 +221,10 @@
     "agent_name": "data_extractor",
     "description": "Extract structured data from text",
     "fields": ["content", "fields_to_extract"],
+    "hints": {
+      "content": "Paste the text, document, or unstructured data",
+      "fields_to_extract": "What information to extract? (e.g., 'names, emails, dates, prices')"
+    },
     "role": "You are a data extraction specialist who accurately identifies and structures information from unstructured text.",
     "template": "Extract the following information from the text below.\n\nFields to extract: {fields_to_extract}\n\nText:\n{content}\n\nProvide the extracted information in a clear, structured format. Use 'Not found' for any fields not present in the text.",
     "output_format": "plain_text",
@@ -169,6 +236,11 @@
     "agent_name": "file_analyzer",
     "description": "Analyze content from files",
     "fields": ["file_path", "content", "analysis_type"],
+    "hints": {
+      "file_path": "File path or name (for reference only)",
+      "content": "Paste the file content you want to analyze",
+      "analysis_type": "What kind of analysis? (e.g., 'summary', 'sentiment', 'themes', 'statistics')"
+    },
     "role": "You are a document analyst who provides thorough analysis and insights from file contents.",
     "template": "Perform a {analysis_type} analysis on the following file content:\n\n{content}\n\nProvide a comprehensive analysis including:\n- Overview and Summary\n- Key findings\n- Notable patterns or insights\n- Recommendations (if applicable)",
     "output_format": "markdown",
